@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAAC — Plataforma de Automação e Auditoria Cartorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --azul:         #0d1f3c;
+  --azul-medio:   #1a3a6b;
+  --azul-claro:   #2a5298;
+  --dourado:      #c9a84c;
+  --dourado-claro:#e8c97a;
+  --dourado-bg:   #fdf6e3;
+  --branco:       #ffffff;
+  --cinza-fundo:  #f4f6fb;
+  --cinza-borda:  #dde2ec;
+  --cinza-texto:  #6b7a99;
+  --erro:         #c0392b;
+  --erro-bg:      #fdf2f2;
+  --ok:           #1a7a4a;
+  --aviso:        #b7701a;
+  --aviso-bg:     #fff8ec;
+  --radius:       10px;
+  --radius-lg:    16px;
+  --sombra:       0 4px 24px rgba(13,31,60,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cinza-fundo); color: var(--azul); min-height: 100vh; }
+
+/* ── LOGIN ── */
+.login-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-medio) 60%, #0a1628 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.login-overlay.hidden { display: none; }
+.login-card {
+  background: white; border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  width: 100%; max-width: 460px;
+  overflow: hidden;
+}
+.login-header {
+  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-medio) 100%);
+  border-bottom: 3px solid var(--dourado);
+  padding: 28px 32px 24px;
+  text-align: center;
+}
+.login-sigla {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem; font-weight: 700;
+  color: var(--dourado); letter-spacing: 6px;
+  line-height: 1;
+}
+.login-nome { color: rgba(255,255,255,0.8); font-size: 0.78rem; margin-top: 6px; }
+.login-body { padding: 32px; }
+.login-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem; font-weight: 600;
+  color: var(--azul); margin-bottom: 6px;
+}
+.login-sub { color: var(--cinza-texto); font-size: 0.82rem; margin-bottom: 24px; }
+.login-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1.5px solid var(--cinza-borda); border-radius: var(--radius); overflow: hidden; }
+.login-tab {
+  flex: 1; padding: 10px; text-align: center;
+  font-size: 0.85rem; font-weight: 500; cursor: pointer;
+  background: white; color: var(--cinza-texto);
+  border: none; transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.login-tab.active { background: var(--azul); color: white; }
+.login-form { display: flex; flex-direction: column; gap: 14px; }
+.login-form.hidden { display: none; }
+.campo-login { display: flex; flex-direction: column; gap: 4px; }
+.campo-login label { font-size: 0.78rem; font-weight: 600; color: var(--azul); }
+.campo-login input {
+  border: 1.5px solid var(--cinza-borda); border-radius: var(--radius);
+  padding: 10px 14px; font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem; color: var(--azul); outline: none;
+  transition: border-color 0.2s;
+}
+.campo-login input:focus { border-color: var(--azul-claro); box-shadow: 0 0 0 3px rgba(42,82,152,0.1); }
+.campo-login .opcional { color: var(--cinza-texto); font-weight: 400; font-size: 0.72rem; }
+.btn-login {
+  background: linear-gradient(135deg, var(--dourado) 0%, #a87d2a 100%);
+  color: var(--azul); border: none; border-radius: var(--radius);
+  padding: 13px; font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  transition: all 0.2s; margin-top: 4px;
+  box-shadow: 0 4px 14px rgba(201,168,76,0.35);
+}
+.btn-login:hover { box-shadow: 0 6px 20px rgba(201,168,76,0.5); transform: translateY(-1px); }
+.login-fase {
+  background: var(--dourado-bg); border: 1px solid rgba(201,168,76,0.4);
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 0.75rem; color: #7a5a1a; text-align: center; margin-top: 8px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-medio) 100%);
+  border-bottom: 3px solid var(--dourado);
+  padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+}
+.logo { display: flex; align-items: center; gap: 14px; }
+.logo-sigla { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 700; color: var(--dourado); letter-spacing: 3px; line-height: 1; }
+.logo-texto { color: rgba(255,255,255,0.85); font-size: 0.7rem; font-weight: 400; line-height: 1.4; }
+.logo-texto strong { color: var(--dourado-claro); font-weight: 600; display: block; font-size: 0.76rem; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-usuario { color: rgba(255,255,255,0.7); font-size: 0.78rem; }
+.header-usuario strong { color: var(--dourado-claro); }
+.header-badge { background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); color: var(--dourado-claro); padding: 4px 12px; border-radius: 20px; font-size: 0.68rem; letter-spacing: 1px; font-weight: 500; }
+.btn-sair { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.btn-sair:hover { background: rgba(255,255,255,0.2); color: white; }
+
+/* ── AUTOSAVE ── */
+.autosave-bar {
+  background: var(--azul); padding: 6px 32px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+}
+.autosave-status { font-size: 0.7rem; color: rgba(255,255,255,0.45); }
+.autosave-status.salvando { color: var(--dourado-claro); }
+.autosave-status.salvo { color: rgba(100,200,120,0.8); }
+
+/* ── PROGRESS BAR ── */
+.progress-wrapper { background: var(--azul); padding: 0 32px 18px; border-bottom: 1px solid rgba(201,168,76,0.2); }
+.progress-label { color: rgba(255,255,255,0.4); font-size: 0.68rem; letter-spacing: 1px; padding-top: 12px; margin-bottom: 10px; }
+.progress-steps { display: flex; gap: 4px; align-items: center; overflow-x: auto; padding-bottom: 4px; }
+.step-item { display: flex; align-items: center; gap: 5px; flex-shrink: 0; cursor: pointer; }
+.step-num { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 600; border: 2px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.35); transition: all 0.3s; }
+.step-item.active .step-num { background: var(--dourado); border-color: var(--dourado); color: var(--azul); }
+.step-item.done .step-num { background: var(--ok); border-color: var(--ok); color: white; font-size: 0; }
+.step-item.done .step-num::after { content: '✓'; font-size: 0.68rem; }
+.step-name { font-size: 0.65rem; color: rgba(255,255,255,0.35); white-space: nowrap; display: none; }
+.step-item.active .step-name { color: var(--dourado-claro); display: block; }
+.step-connector { width: 16px; height: 2px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+.step-item.done + .step-connector { background: var(--ok); }
+
+/* ── MAIN ── */
+.main { max-width: 900px; margin: 0 auto; padding: 28px 20px 80px; }
+
+/* ── SECTION CARD ── */
+.section-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--sombra); margin-bottom: 20px; overflow: hidden; display: none; }
+.section-card.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: none; } }
+.section-header { background: linear-gradient(135deg, var(--azul) 0%, var(--azul-medio) 100%); padding: 18px 26px; display: flex; align-items: center; gap: 12px; }
+.section-icon { width: 40px; height: 40px; border-radius: 9px; background: rgba(201,168,76,0.2); border: 1px solid rgba(201,168,76,0.4); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; color: white; }
+.section-subtitle { color: rgba(255,255,255,0.5); font-size: 0.73rem; margin-top: 2px; }
+.section-body { padding: 26px; }
+
+/* ── GRID ── */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+@media (max-width: 640px) {
+  .grid-2,.grid-3,.grid-4 { grid-template-columns: 1fr; }
+  .span-2,.span-3,.span-4 { grid-column: span 1; }
+  .header { padding: 12px 16px; }
+  .progress-wrapper { padding: 0 16px 14px; }
+  .main { padding: 16px 12px 60px; }
+  .section-body { padding: 16px; }
+  .autosave-bar { padding: 6px 16px; }
+}
+
+/* ── CAMPO ── */
+.campo { display: flex; flex-direction: column; gap: 5px; }
+.campo label { font-size: 0.77rem; font-weight: 600; color: var(--azul); letter-spacing: 0.2px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.campo label .obrig { color: var(--dourado); }
+.campo label .auto-tag { background: var(--dourado-bg); color: var(--dourado); font-size: 0.62rem; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
+.campo label .info-icon { cursor: help; color: var(--azul-claro); font-size: 0.85rem; display: inline-flex; align-items: center; position: relative; }
+.campo label .info-icon:hover .tooltip { display: block; }
+.tooltip { display: none; position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: var(--azul); color: white; font-size: 0.72rem; padding: 8px 12px; border-radius: 8px; white-space: normal; width: 280px; z-index: 50; line-height: 1.5; font-weight: 400; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+.tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--azul); }
+.campo input, .campo select, .campo textarea {
+  border: 1.5px solid var(--cinza-borda); border-radius: var(--radius);
+  padding: 10px 14px; font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem; color: var(--azul); background: white;
+  transition: border-color 0.2s, box-shadow 0.2s; outline: none; width: 100%;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus { border-color: var(--azul-claro); box-shadow: 0 0 0 3px rgba(42,82,152,0.1); }
+.campo input.auto-field { background: var(--dourado-bg); color: var(--cinza-texto); border-color: rgba(201,168,76,0.3); cursor: not-allowed; }
+.campo input.cep-field { letter-spacing: 1px; }
+.campo textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.campo .dica { font-size: 0.71rem; color: var(--cinza-texto); line-height: 1.4; }
+.campo .alerta { font-size: 0.71rem; color: var(--aviso); background: var(--aviso-bg); border: 1px solid rgba(183,112,26,0.3); border-radius: 6px; padding: 6px 10px; line-height: 1.4; display: none; }
+.campo .alerta.visivel { display: block; }
+.campo .erro-msg { font-size: 0.71rem; color: var(--erro); display: none; }
+.campo.invalido input, .campo.invalido select, .campo.invalido textarea { border-color: var(--erro); }
+.campo.invalido .erro-msg { display: block; }
+
+/* ── DIVISOR ── */
+.divisor-titulo { font-size: 0.7rem; font-weight: 600; color: var(--cinza-texto); letter-spacing: 1.5px; text-transform: uppercase; margin: 22px 0 14px; display: flex; align-items: center; gap: 10px; }
+.divisor-titulo::after { content: ''; flex: 1; height: 1px; background: var(--cinza-borda); }
+
+/* ── TABELA DINÂMICA ── */
+.tabela-wrapper { overflow-x: auto; margin-top: 8px; border-radius: var(--radius); border: 1px solid var(--cinza-borda); }
+.tabela-dinamica { width: 100%; border-collapse: collapse; font-size: 0.81rem; min-width: 700px; }
+.tabela-dinamica thead { position: sticky; top: 0; z-index: 10; }
+.tabela-dinamica th { background: var(--azul); color: white; padding: 10px 12px; text-align: left; font-weight: 500; font-size: 0.7rem; white-space: normal; line-height: 1.3; border-right: 1px solid rgba(255,255,255,0.1); }
+.tabela-dinamica td { padding: 6px 8px; border-bottom: 1px solid var(--cinza-borda); border-right: 1px solid var(--cinza-borda); vertical-align: middle; }
+.tabela-dinamica tr:last-child td { border-bottom: none; }
+.tabela-dinamica tr:hover td { background: var(--cinza-fundo); }
+.tabela-dinamica input, .tabela-dinamica select { border: 1px solid var(--cinza-borda); border-radius: 6px; padding: 6px 8px; font-family: 'DM Sans', sans-serif; font-size: 0.81rem; width: 100%; min-width: 70px; background: white; }
+.tabela-dinamica input:focus, .tabela-dinamica select:focus { outline: none; border-color: var(--azul-claro); box-shadow: 0 0 0 2px rgba(42,82,152,0.1); }
+.tabela-dinamica td.auto-col { background: var(--dourado-bg); color: var(--cinza-texto); font-size: 0.77rem; text-align: center; min-width: 90px; }
+.tabela-dinamica td.num-col { text-align: center; color: var(--cinza-texto); font-weight: 600; width: 36px; }
+.btn-add-linha { margin-top: 10px; background: transparent; border: 1.5px dashed var(--azul-claro); color: var(--azul-claro); padding: 8px 18px; border-radius: var(--radius); cursor: pointer; font-size: 0.81rem; font-weight: 500; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.btn-add-linha:hover { background: rgba(42,82,152,0.07); }
+.btn-del-linha { background: none; border: none; color: var(--erro); cursor: pointer; font-size: 0.95rem; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
+.btn-del-linha:hover { background: rgba(192,57,43,0.1); }
+.btn-copy-linha { background: none; border: none; color: var(--azul-claro); cursor: pointer; font-size: 0.85rem; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; title: "Duplicar linha"; }
+.btn-copy-linha:hover { background: rgba(42,82,152,0.1); }
+
+/* ── AVISO AUTO ── */
+.aviso-auto { background: var(--dourado-bg); border: 1px solid rgba(201,168,76,0.4); border-radius: var(--radius); padding: 10px 14px; font-size: 0.77rem; color: #7a5a1a; margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start; }
+
+/* ── TIPO INSTRUMENTO ── */
+.tipo-instrumento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.tipo-card { border: 2px solid var(--cinza-borda); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: all 0.2s; }
+.tipo-card:hover { border-color: var(--azul-claro); }
+.tipo-card.selecionado { border-color: var(--dourado); background: var(--dourado-bg); }
+.tipo-card-titulo { font-weight: 600; font-size: 0.85rem; color: var(--azul); margin-bottom: 3px; }
+.tipo-card-sub { font-size: 0.72rem; color: var(--cinza-texto); line-height: 1.3; }
+.tipo-card.selecionado .tipo-card-titulo { color: #7a5a1a; }
+
+/* ── RESUMO / BOTÕES ── */
+.nav-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 12px; }
+.btn { padding: 11px 26px; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-prev { background: white; border: 1.5px solid var(--cinza-borda); color: var(--cinza-texto); }
+.btn-prev:hover { border-color: var(--azul-claro); color: var(--azul); }
+.btn-next { background: linear-gradient(135deg, var(--azul-claro) 0%, var(--azul-medio) 100%); color: white; box-shadow: 0 4px 14px rgba(42,82,152,0.3); }
+.btn-next:hover { box-shadow: 0 6px 20px rgba(42,82,152,0.4); transform: translateY(-1px); }
+.btn-gerar { background: linear-gradient(135deg, var(--dourado) 0%, #a87d2a 100%); color: var(--azul); box-shadow: 0 4px 14px rgba(201,168,76,0.35); padding: 13px 36px; font-size: 0.98rem; }
+.btn-gerar:hover { box-shadow: 0 6px 22px rgba(201,168,76,0.5); transform: translateY(-1px); }
+.btn-gerar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.step-info { color: var(--cinza-texto); font-size: 0.77rem; }
+
+/* ── REVISÃO ── */
+.revisao-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--sombra); display: none; }
+.revisao-card.active { display: block; animation: fadeIn 0.3s ease; }
+.revisao-header { background: linear-gradient(135deg, var(--azul) 0%, var(--azul-medio) 100%); padding: 24px 28px; border-bottom: 3px solid var(--dourado); }
+.revisao-header-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; color: white; }
+.revisao-header-sub { color: rgba(255,255,255,0.6); font-size: 0.78rem; margin-top: 4px; }
+.revisao-secao { border-bottom: 1px solid var(--cinza-borda); }
+.revisao-secao-header { padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: var(--cinza-fundo); }
+.revisao-secao-titulo { font-weight: 600; font-size: 0.88rem; color: var(--azul); display: flex; align-items: center; gap: 8px; }
+.revisao-secao-body { padding: 16px 24px; display: none; }
+.revisao-secao-body.aberto { display: block; }
+.revisao-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.revisao-item { background: var(--cinza-fundo); border-radius: 8px; padding: 10px 14px; }
+.revisao-item .label { font-size: 0.7rem; color: var(--cinza-texto); font-weight: 500; margin-bottom: 2px; }
+.revisao-item .valor { font-size: 0.85rem; font-weight: 600; color: var(--azul); word-break: break-word; }
+.revisao-item .valor.vazio { color: var(--cinza-texto); font-weight: 400; font-style: italic; }
+.btn-editar-secao { background: transparent; border: 1px solid var(--azul-claro); color: var(--azul-claro); padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.2s; }
+.btn-editar-secao:hover { background: var(--azul-claro); color: white; }
+.revisao-footer { padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; }
+.alerta-cub { background: var(--erro-bg); border: 1px solid rgba(192,57,43,0.3); border-radius: var(--radius); padding: 12px 16px; font-size: 0.8rem; color: var(--erro); margin: 0 28px 20px; display: none; }
+.alerta-cub.visivel { display: block; }
+
+/* ── DOCS LISTA ── */
+.docs-lista { display: flex; flex-direction: column; gap: 8px; margin: 20px 28px; }
+.doc-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--cinza-fundo); border-radius: var(--radius); border-left: 3px solid var(--dourado); }
+.doc-icon { font-size: 1.1rem; }
+.doc-nome { font-size: 0.85rem; font-weight: 500; }
+.doc-status { margin-left: auto; font-size: 0.7rem; color: var(--ok); font-weight: 600; }
+
+/* ── CUB ALERTA ── */
+.cub-alerta { display: none; }
+.cub-alerta.visivel { display: block; background: var(--aviso-bg); border: 1px solid rgba(183,112,26,0.4); border-radius: 8px; padding: 8px 12px; font-size: 0.75rem; color: var(--aviso); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ LOGIN ═══ -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-sigla">PAAC</div>
+      <div class="login-nome">Plataforma de Automação e Auditoria Cartorial</div>
+    </div>
+    <div class="login-body">
+      <div class="login-title">Bem-vindo</div>
+      <div class="login-sub">Acesse sua conta ou cadastre-se para continuar</div>
+      <div class="login-tabs">
+        <button class="login-tab active" onclick="switchTab('login')">Entrar</button>
+        <button class="login-tab" onclick="switchTab('cadastro')">Cadastrar</button>
+      </div>
+      <!-- FORM LOGIN -->
+      <div class="login-form" id="formLogin">
+        <div class="campo-login"><label>E-mail</label><input type="email" id="loginEmail" placeholder="seu@email.com"></div>
+        <div class="campo-login"><label>Senha</label><input type="password" id="loginSenha" placeholder="••••••••"></div>
+        <button class="btn-login" onclick="fazerLogin()">Entrar na Plataforma →</button>
+      </div>
+      <!-- FORM CADASTRO -->
+      <div class="login-form hidden" id="formCadastro">
+        <div class="campo-login"><label>Nome Completo</label><input type="text" id="cadNome" placeholder="Seu nome completo"></div>
+        <div class="campo-login"><label>E-mail</label><input type="email" id="cadEmail" placeholder="seu@email.com"></div>
+        <div class="campo-login"><label>Telefone</label><input type="tel" id="cadTel" placeholder="(83) 99999-0000"></div>
+        <div class="campo-login"><label>Instagram <span class="opcional">(opcional)</span></label><input type="text" id="cadInsta" placeholder="@seuinstagram"></div>
+        <div class="campo-login"><label>Senha</label><input type="password" id="cadSenha" placeholder="Mínimo 6 caracteres"></div>
+        <button class="btn-login" onclick="fazerCadastro()">Criar Conta →</button>
+      </div>
+      <div class="login-fase">🔒 Fase E0 — Acesso para testes. Pagamento será ativado após validação da plataforma.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ APP ═══ -->
+<div id="appContent">
+  <header class="header">
+    <div class="logo">
+      <div class="logo-sigla">PAAC</div>
+      <div class="logo-texto"><strong>Plataforma de Automação e Auditoria Cartorial</strong>Geração automática de documentos de incorporação imobiliária</div>
+    </div>
+    <div class="header-right">
+      <div class="header-usuario">Olá, <strong id="nomeUsuarioHeader">—</strong></div>
+      <div class="header-badge">FASE E0 — BETA</div>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <div class="autosave-bar">
+    <span class="autosave-status" id="autosaveStatus">💾 Salvamento automático ativo</span>
+  </div>
+
+  <div class="progress-wrapper">
+    <div class="progress-label">PROGRESSO DO PREENCHIMENTO</div>
+    <div class="progress-steps" id="progressSteps"></div>
+  </div>
+
+  <main class="main">
+
+    <!-- ══ SEÇÃO 1 — IDENTIFICAÇÃO ══ -->
+    <div class="section-card active" id="sec-1">
+      <div class="section-header">
+        <div class="section-icon">🏗️</div>
+        <div><div class="section-title">Identificação do Empreendimento</div><div class="section-subtitle">Dados gerais do edifício, tipo de instrumento e localização</div></div>
+      </div>
+      <div class="section-body">
+        <div class="divisor-titulo">Tipo de Instrumento</div>
+        <div class="tipo-instrumento-grid">
+          <div class="tipo-card selecionado" id="tipoConvencao" onclick="selecionarTipo('convencao')">
+            <div class="tipo-card-titulo">📄 Convenção de Condomínio</div>
+            <div class="tipo-card-sub">Novo condomínio — primeiro registro cartorial</div>
+          </div>
+          <div class="tipo-card" id="tipoRerratificacao" onclick="selecionarTipo('rerratificacao')">
+            <div class="tipo-card-titulo">📝 Rerratificação da Convenção</div>
+            <div class="tipo-card-sub">Correção ou atualização de convenção já registrada</div>
+          </div>
+        </div>
+        <div class="grid grid-2">
+          <div class="campo span-2">
+            <label>Nome do Edifício <span class="obrig">*</span></label>
+            <input type="text" id="NOME_EDIFICIO" placeholder="Ex: TOP EVOLUTION RESIDENCE" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Tipo de Edificação <span class="obrig">*</span></label>
+            <select id="TIPO_EDIFICACAO" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>Residencial Multifamiliar</option>
+              <option>Comercial</option>
+              <option>Misto (Residencial + Comercial)</option>
+              <option>Industrial</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Destinação <span class="obrig">*</span></label>
+            <input type="text" id="DESTINACAO" placeholder="Ex: residencial multifamiliar" oninput="autoSave()">
+            <span class="dica">Em minúsculas, conforme uso no documento</span>
+          </div>
+        </div>
+        <div class="divisor-titulo">Endereço do Empreendimento</div>
+        <div class="grid grid-2">
+          <div class="campo">
+            <label>CEP <span class="obrig">*</span></label>
+            <input type="text" id="CEP_LOCAL" class="cep-field" placeholder="00.000-000" maxlength="10" oninput="mascaraCEP(this,'LOCAL')" onblur="buscarCEP('LOCAL')">
+            <span class="dica" id="cep-local-status"></span>
+          </div>
+          <div class="campo">
+            <label>Logradouro <span class="obrig">*</span></label>
+            <input type="text" id="LOGRADOURO" placeholder="Ex: Rua Luís Moreira Gomes" oninput="calcularEndereco();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Número <span class="obrig">*</span></label>
+            <input type="text" id="NUMERO_ENDERECO" placeholder="Ex: 350" oninput="calcularEndereco();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Lote / Quadra / Setor</label>
+            <input type="text" id="LOTE_QUADRA_SETOR" placeholder="Ex: Lote 0253, Quadra 047, Setor 45" oninput="calcularEndereco();autoSave()">
+            <span class="dica">Opcional</span>
+          </div>
+          <div class="campo">
+            <label>Bairro <span class="obrig">*</span></label>
+            <input type="text" id="BAIRRO" placeholder="Ex: Jardim Cidade Universitária" oninput="calcularEndereco();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Cidade <span class="obrig">*</span></label>
+            <input type="text" id="CIDADE" placeholder="Ex: João Pessoa" oninput="calcularEndereco();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Estado (UF) <span class="obrig">*</span></label>
+            <select id="UF" onchange="calcularEndereco();autoSave()">
+              <option value="">Selecione...</option>
+              <option>AL</option><option>BA</option><option>CE</option><option>MA</option><option>PB</option><option>PE</option><option>PI</option><option>RN</option><option>SE</option><option>AC</option><option>AM</option><option>AP</option><option>GO</option><option>MT</option><option>MS</option><option>PA</option><option>RO</option><option>RR</option><option>TO</option><option>DF</option><option>ES</option><option>MG</option><option>RJ</option><option>SP</option><option>PR</option><option>RS</option><option>SC</option>
+            </select>
+          </div>
+          <div class="campo span-2">
+            <label>Endereço Completo <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="ENDERECO_COMPLETO" class="auto-field" readonly placeholder="Gerado automaticamente...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 2 — INCORPORADOR ══ -->
+    <div class="section-card" id="sec-2">
+      <div class="section-header">
+        <div class="section-icon">🏢</div>
+        <div><div class="section-title">Dados do Incorporador</div><div class="section-subtitle">Pessoa física ou jurídica responsável pela incorporação</div></div>
+      </div>
+      <div class="section-body">
+        <div class="grid grid-2">
+          <div class="campo span-2">
+            <label>Razão Social / Nome Completo <span class="obrig">*</span></label>
+            <input type="text" id="NOME_INCORPORADOR" placeholder="Ex: Top Construções Eireli" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>CNPJ ou CPF <span class="obrig">*</span></label>
+            <input type="text" id="CNPJ_CPF_INCORPORADOR" placeholder="Ex: 39.676.981/0001-27" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Tipo de Pessoa <span class="obrig">*</span></label>
+            <select id="TIPO_PESSOA_INCORP" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>pessoa jurídica de direito privado</option>
+              <option>pessoa física</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>CEP <span class="obrig">*</span></label>
+            <input type="text" id="CEP_INCORPORADOR" class="cep-field" placeholder="00.000-000" maxlength="10" oninput="mascaraCEP(this,'INCORP')" onblur="buscarCEP('INCORP')">
+            <span class="dica" id="cep-incorp-status"></span>
+          </div>
+          <div class="campo span-2">
+            <label>Endereço do Incorporador <span class="obrig">*</span></label>
+            <input type="text" id="ENDERECO_INCORPORADOR" placeholder="Ex: Rua Bancário Sérgio Guerra, 47, Sl 102, Anatólia, João Pessoa/PB" oninput="autoSave()">
+          </div>
+        </div>
+        <div class="divisor-titulo">Representante Legal</div>
+        <div class="grid grid-2">
+          <div class="campo">
+            <label>Nome do Representante <span class="obrig">*</span></label>
+            <input type="text" id="NOME_REPR_INCORP" placeholder="Ex: Simone Cristina Miranda Cabral" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Cargo do Representante <span class="obrig">*</span></label>
+            <input type="text" id="CARGO_REPR_INCORP" placeholder="Ex: sócio administrador" oninput="autoSave()">
+          </div>
+          <div class="campo span-2">
+            <label>Qualificação Completa <span class="obrig">*</span></label>
+            <textarea id="QUALIF_REPR_INCORP" placeholder="Ex: brasileira, natural de João Pessoa, estado da Paraíba, solteira, nascida em 04 de novembro de 1976, empresária, CPF nº 026.643.014-70, RG nº 1.745.928 SSDS/PB, residente na Rua X, nº 00, Bairro Y, João Pessoa/PB." rows="4" oninput="autoSave()"></textarea>
+            <span class="dica">Nacionalidade, estado civil, profissão, CPF, RG (nº e órgão), data de nascimento e endereço completo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 3 — RESPONSÁVEL TÉCNICO ══ -->
+    <div class="section-card" id="sec-3">
+      <div class="section-header">
+        <div class="section-icon">📐</div>
+        <div><div class="section-title">Responsáveis Técnicos</div><div class="section-subtitle">RT responsável pela documentação e demais profissionais</div></div>
+      </div>
+      <div class="section-body">
+        <div class="divisor-titulo">Responsável pela Confecção da Documentação</div>
+        <div class="aviso-auto">ℹ️ Título, Conselho e Tipo RRT/ART calculados automaticamente pelo número de registro. Campos de endereço e telefone deste RT constarão nos documentos.</div>
+        <div class="grid grid-2">
+          <div class="campo span-2">
+            <label>Nome Completo <span class="obrig">*</span></label>
+            <input type="text" id="NOME_RT" placeholder="Ex: Miguel Aluizio Carvalho Germano" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Registro CAU ou CREA <span class="obrig">*</span></label>
+            <input type="text" id="REGISTRO_RT" placeholder="Ex: A22625-4 (CAU) ou 160399423-8 (CREA)" oninput="calcularRT();autoSave()">
+            <span class="dica">CAU: começa com A — CREA: começa com número</span>
+          </div>
+          <div class="campo">
+            <label>Número do RRT ou ART <span class="obrig">*</span></label>
+            <input type="text" id="RRT_ART" placeholder="Ex: PB20220460233" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Data de Emissão do RRT/ART <span class="obrig">*</span></label>
+            <input type="date" id="DATA_RRT" onchange="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Título <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="TITULO_RT" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+          <div class="campo">
+            <label>Conselho <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="CONSELHO_RT" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+          <div class="campo">
+            <label>Tipo (RRT/ART) <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="TIPO_RRT_ART" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+          <div class="campo span-2">
+            <label>Endereço do RT <span class="obrig">*</span></label>
+            <input type="text" id="ENDERECO_RT" placeholder="Ex: Rua X, nº 00, Bairro Y, João Pessoa/PB" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Telefone do RT <span class="obrig">*</span></label>
+            <input type="text" id="TELEFONE_RT" placeholder="Ex: (83) 99999-0000" oninput="autoSave()">
+          </div>
+        </div>
+
+        <div class="divisor-titulo">Demais Responsáveis Técnicos</div>
+        <p style="color:var(--cinza-texto);font-size:0.8rem;margin-bottom:12px;">Adicione outros profissionais vinculados à obra (execução, projetos complementares, etc.). Endereço e telefone não são exibidos por questões de LGPD.</p>
+        <div class="tabela-wrapper">
+          <table class="tabela-dinamica" id="tabelaRTs">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th style="min-width:180px">Nome Completo</th>
+                <th style="min-width:150px">Registro CAU/CREA</th>
+                <th style="min-width:130px">Número RRT/ART</th>
+                <th style="min-width:110px">Data RRT/ART</th>
+                <th style="min-width:80px">Título (AUTO)</th>
+                <th style="min-width:70px">Conselho (AUTO)</th>
+                <th style="min-width:180px">Especialidade / Função</th>
+                <th style="width:60px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="bodyRTs"></tbody>
+          </table>
+        </div>
+        <button class="btn-add-linha" onclick="addRT()">+ Adicionar Responsável Técnico</button>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 4 — DADOS DO PROJETO ══ -->
+    <div class="section-card" id="sec-4">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div><div class="section-title">Dados do Projeto</div><div class="section-subtitle">Características gerais do empreendimento</div></div>
+      </div>
+      <div class="section-body">
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Padrão NBR 12721 <span class="obrig">*</span></label>
+            <select id="PROJETO_PADRAO" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>R1-B</option><option>R1-N</option><option>R1-A</option>
+              <option>R8-B</option><option>R8-N</option><option>R8-A</option>
+              <option>R16-B</option><option>R16-N</option><option>R16-A</option>
+              <option>PIS</option><option>PP-4B</option><option>PP-4N</option>
+              <option>CSL-8</option><option>CSL-16</option>
+              <option>GI</option><option>GR</option><option>LS</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Padrão de Acabamento <span class="obrig">*</span></label>
+            <select id="PADRAO_ACABAMENTO" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>BAIXO</option><option>NORMAL</option><option>ALTO</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>
+              Nº de Pavimentos (excl. Coberta) <span class="obrig">*</span>
+              <span class="info-icon">ℹ️
+                <span class="tooltip">Informe o número de pavimentos EXCLUINDO o Pavimento de Coberta/Barriletes (conforme critério da Prefeitura). O sistema inserirá automaticamente a observação técnica exigida pela NBR 12721/2007 nos documentos.</span>
+              </span>
+            </label>
+            <input type="number" id="NUM_PAVIMENTOS" placeholder="Ex: 5" min="1" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Total de Unidades <span class="obrig">*</span></label>
+            <input type="number" id="QTD_UNIDADES" placeholder="Ex: 9" min="1" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Total de Unidades (extenso) <span class="obrig">*</span></label>
+            <input type="text" id="QTD_UNIDADES_EXTENSO" placeholder="Ex: nove" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Área do Terreno (m²) <span class="obrig">*</span></label>
+            <input type="text" id="AREA_TERRENO" placeholder="Ex: 403,000" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Quantidade de Blocos/Torres <span class="obrig">*</span></label>
+            <input type="number" id="QTD_BLOCOS" placeholder="Ex: 1" min="1" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Nome(s) dos Blocos <span class="obrig">*</span></label>
+            <input type="text" id="NOMES_BLOCOS" placeholder="Ex: Único / A, B, C" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Quartos (projeto padrão) <span class="obrig">*</span></label>
+            <input type="number" id="QUARTOS_PADRAO" placeholder="Ex: 2" min="0" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Salas (projeto padrão) <span class="obrig">*</span></label>
+            <input type="number" id="SALAS_PADRAO" placeholder="Ex: 1" min="0" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Banheiros (projeto padrão) <span class="obrig">*</span></label>
+            <input type="number" id="BANHEIROS_PADRAO" placeholder="Ex: 2" min="0" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Vagas Cobertas</label>
+            <input type="number" id="QTD_VAGAS_COBERTAS" placeholder="Ex: 7" min="0" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Vagas Descobertas</label>
+            <input type="number" id="QTD_VAGAS_DESCOBERTAS" placeholder="Ex: 2" min="0" oninput="autoSave()">
+          </div>
+          <div class="campo span-3">
+            <label>Descrição do Bloco <span class="obrig">*</span></label>
+            <input type="text" id="DESC_BLOCO" placeholder="Ex: um bloco residencial de 05 (cinco) pavimentos, sendo..." oninput="autoSave()">
+          </div>
+          <div class="campo span-3">
+            <label>Descrição Geral das Vagas <span class="obrig">*</span></label>
+            <textarea id="DESC_VAGAS" rows="3" placeholder="Ex: 07 (sete) vagas cobertas no semi-subsolo e 02 (duas) vagas descobertas no térreo, sendo 01 (uma) adaptada PCD..." oninput="autoSave()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 5 — CARTÓRIO E TERRENO ══ -->
+    <div class="section-card" id="sec-5">
+      <div class="section-header">
+        <div class="section-icon">⚖️</div>
+        <div><div class="section-title">Cartório, Terreno e Matrícula</div><div class="section-subtitle">Dados registrais do imóvel</div></div>
+      </div>
+      <div class="section-body">
+        <div class="divisor-titulo">Cartório de Registro de Imóveis</div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Tratamento do Titular <span class="obrig">*</span></label>
+            <input type="text" id="TITULAR_CARTORIO" placeholder="Ex: Ilma. Oficiala" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Zona / Circunscrição <span class="obrig">*</span></label>
+            <input type="text" id="ZONA_CARTORIO" placeholder="Ex: Zona Sul" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Nome do Cartório <span class="obrig">*</span></label>
+            <input type="text" id="NOME_CARTORIO" placeholder="Ex: Cartório Carlos Ulysses" oninput="autoSave()">
+          </div>
+        </div>
+        <div class="divisor-titulo">Matrícula e Registro</div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Número da Matrícula <span class="obrig">*</span></label>
+            <input type="text" id="MATRICULA" placeholder="Ex: 209.379" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Livro <span class="obrig">*</span></label>
+            <input type="text" id="LIVRO_MATRICULA" placeholder="Ex: 2-T / C-161" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Ordem do Último AV <span class="obrig">*</span></label>
+            <input type="text" id="NUM_ORDEM_AV" placeholder="Ex: AV 8" oninput="autoSave()">
+          </div>
+          <div class="campo span-2">
+            <label>Data do Último AV <span class="obrig">*</span></label>
+            <input type="text" id="DATA_AV" placeholder="Ex: 25 de outubro de 2024" oninput="autoSave()">
+          </div>
+        </div>
+        <div class="divisor-titulo">Dados do Terreno</div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Tipo de Certidão / Documento <span class="obrig">*</span></label>
+            <select id="TIPO_CERTIDAO" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>CERTIDÃO VINTENÁRIA</option>
+              <option>CERTIDÃO DE INTEIRO TEOR</option>
+              <option>MATRÍCULA ATUALIZADA</option>
+              <option>CERTIDÃO DE ÔNUS REAIS</option>
+              <option>ESCRITURA</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Número da Certidão / Documento <span class="obrig">*</span></label>
+            <input type="text" id="NUM_CERTIDAO" placeholder="Ex: 362620/2024" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Prefeitura <span class="obrig">*</span></label>
+            <input type="text" id="PREFEITURA" placeholder="Ex: PMJP" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Cadastro Municipal (IPTU) <span class="obrig">*</span></label>
+            <input type="text" id="CADASTRO_MUNICIPAL" placeholder="Ex: 45.047.0253.0000.0000" oninput="autoSave()">
+          </div>
+          <div class="campo span-3">
+            <label>Descrição do Terreno <span class="obrig">*</span></label>
+            <textarea id="DESC_TERRENO" rows="5" placeholder="Descrição completa com medidas e confrontações, conforme certidão/matrícula..." oninput="autoSave()"></textarea>
+            <span class="dica">Copie da certidão ou matrícula. Na Fase E2, este campo será preenchido automaticamente via OCR.</span>
+          </div>
+          <div class="campo span-3">
+            <label>Histórico de Titularidade <span class="obrig">*</span></label>
+            <textarea id="DESC_TITULARIDADE" rows="5" placeholder="Histórico completo: proprietários atuais, cadeia dominial, cessões..." oninput="autoSave()"></textarea>
+            <span class="dica">Copie do histórico registral. Na Fase E2, será preenchido automaticamente via OCR.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 6 — APROVAÇÕES ══ -->
+    <div class="section-card" id="sec-6">
+      <div class="section-header">
+        <div class="section-icon">📜</div>
+        <div><div class="section-title">Aprovações — Alvará e Habite-se</div><div class="section-subtitle">Documentos de aprovação da construção</div></div>
+      </div>
+      <div class="section-body">
+        <div class="divisor-titulo">Alvará de Construção</div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Número do Alvará <span class="obrig">*</span></label>
+            <input type="text" id="NUMERO_ALVARA" placeholder="Ex: 5611-22-JP-ALV" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Data do Alvará <span class="obrig">*</span></label>
+            <input type="date" id="DATA_ALVARA" onchange="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Órgão Expedidor <span class="obrig">*</span></label>
+            <input type="text" id="ORGAO_EXPEDIDOR_ALVARA" placeholder="Ex: Prefeitura Municipal de João Pessoa/PB" oninput="autoSave()">
+          </div>
+        </div>
+        <div class="divisor-titulo">Habite-se / Auto de Conclusão <span style="color:var(--cinza-texto);font-size:0.73rem;font-weight:400;">(somente para obras concluídas)</span></div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Número do Habite-se</label>
+            <input type="text" id="NUMERO_HABITESE" placeholder="Ex: 2026/000012" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Data do Habite-se</label>
+            <input type="date" id="DATA_HABITESE" onchange="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Órgão Expedidor</label>
+            <input type="text" id="ORGAO_EXPEDIDOR_HABITESE" placeholder="Ex: PMJP" oninput="autoSave()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 7 — INCORPORAÇÃO E VALORES ══ -->
+    <div class="section-card" id="sec-7">
+      <div class="section-header">
+        <div class="section-icon">💰</div>
+        <div><div class="section-title">Incorporação, Valores e Infraestrutura</div><div class="section-subtitle">Regime, prazos previstos, valores e acessos verticais</div></div>
+      </div>
+      <div class="section-body">
+        <div class="divisor-titulo">Regime e Prazos</div>
+        <div class="grid grid-2">
+          <div class="campo">
+            <label>Regime de Incorporação <span class="obrig">*</span></label>
+            <select id="REGIME_INCORPORACAO" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>REGIME DE PREÇO GLOBAL</option>
+              <option>REGIME DE ADMINISTRAÇÃO</option>
+              <option>REGIME DE EMPREITADA</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Base Legal <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="BASE_LEGAL_REGIME" class="auto-field" readonly placeholder="Calculada conforme regime...">
+          </div>
+          <div class="campo">
+            <label>Prazo Previsto das Obras (meses) <span class="obrig">*</span></label>
+            <input type="number" id="PRAZO_OBRAS_MESES" placeholder="Ex: 36" min="1" oninput="calcularPrazos();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Prazo por Extenso <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="PRAZO_OBRAS_EXTENSO" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+          <div class="campo">
+            <label>Data de Início das Obras <span class="obrig">*</span></label>
+            <input type="date" id="DATA_INICIO_OBRAS" onchange="calcularPrazos();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Data de Término Prevista <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="DATA_TERMINO_OBRAS" class="auto-field" readonly placeholder="Calculada automaticamente...">
+          </div>
+          <div class="campo">
+            <label>Prazo de Carência (dias) <span class="obrig">*</span></label>
+            <input type="number" id="PRAZO_CARENCIA_DIAS" placeholder="Ex: 180" min="0" oninput="calcularPrazos();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Carência por Extenso <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="PRAZO_CARENCIA_EXTENSO" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+        </div>
+
+        <div class="divisor-titulo">Valores</div>
+        <div class="grid grid-2">
+          <div class="campo">
+            <label>Valor da Construção <span class="obrig">*</span></label>
+            <input type="text" id="VALOR_CONSTRUCAO" placeholder="R$ 0,00" oninput="mascaraMoeda(this,'VALOR_CONSTRUCAO');autoSave()">
+          </div>
+          <div class="campo">
+            <label>Valor da Construção por Extenso <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="VALOR_CONSTRUCAO_EXTENSO" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+          <div class="campo">
+            <label>Valor do Terreno <span class="obrig">*</span></label>
+            <input type="text" id="VALOR_TERRENO" placeholder="R$ 0,00" oninput="mascaraMoeda(this,'VALOR_TERRENO');autoSave()">
+          </div>
+          <div class="campo">
+            <label>Valor do Terreno por Extenso <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="VALOR_TERRENO_EXTENSO" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+        </div>
+
+        <div class="divisor-titulo">Acessos Verticais</div>
+        <div class="grid grid-4">
+          <div class="campo">
+            <label>Quantidade de Escadas <span class="obrig">*</span></label>
+            <input type="number" id="QTD_ESCADAS" placeholder="Ex: 1" min="0" oninput="calcularAcessos();autoSave()">
+          </div>
+          <div class="campo">
+            <label>Quantidade de Elevadores <span class="obrig">*</span></label>
+            <input type="number" id="QTD_ELEVADORES" placeholder="Ex: 1" min="0" oninput="calcularAcessos();autoSave()">
+          </div>
+          <div class="campo span-2">
+            <label>Texto dos Acessos Verticais <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="DESC_ACESSOS_VERTICAIS" class="auto-field" readonly placeholder="Gerado automaticamente...">
+          </div>
+        </div>
+
+        <div class="divisor-titulo">Reservatórios</div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Reservatório Superior</label>
+            <input type="text" id="CAPACIDADE_RES_SUP" placeholder="Ex: 16,20 m³ (16.200 litros)" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Reservatório Inferior</label>
+            <input type="text" id="CAPACIDADE_RES_INF" placeholder="Ex: 3,00 m³ (3.000 litros)" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Total dos Reservatórios <span class="auto-tag">AUTO</span></label>
+            <input type="text" id="CAPACIDADE_RES_TOTAL" class="auto-field" readonly placeholder="Calculado...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 8 — CONVENÇÃO E CUB ══ -->
+    <div class="section-card" id="sec-8">
+      <div class="section-header">
+        <div class="section-icon">📅</div>
+        <div><div class="section-title">Convenção e CUB</div><div class="section-subtitle">Partes comuns e dados do Custo Unitário Básico</div></div>
+      </div>
+      <div class="section-body">
+        <div class="divisor-titulo">Partes Comuns do Edifício</div>
+        <p style="color:var(--cinza-texto);font-size:0.8rem;margin-bottom:14px;">Selecione os elementos que compõem as partes comuns. Os itens obrigatórios já estão marcados.</p>
+
+        <div style="background:var(--cinza-fundo);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+          <div style="font-size:0.75rem;font-weight:600;color:var(--cinza-texto);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">🔒 Obrigatórios (não podem ser desmarcados)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="partesComuns_obrig"></div>
+        </div>
+        <div style="background:white;border:1px solid var(--cinza-borda);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+          <div style="font-size:0.75rem;font-weight:600;color:var(--cinza-texto);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">☑️ Opcionais (selecione conforme o projeto)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;" id="partesComuns_opc"></div>
+        </div>
+        <div class="campo">
+          <label>Outros elementos não listados</label>
+          <input type="text" id="partesComuns_outros" placeholder="Ex: deck molhado, espaço pet, coworking..." oninput="gerarTextoPCC();autoSave()">
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-size:0.75rem;font-weight:600;color:var(--azul);margin-bottom:6px;">Prévia do texto gerado:</div>
+          <div id="previewPartesComuns" style="background:var(--dourado-bg);border:1px solid rgba(201,168,76,0.3);border-radius:var(--radius);padding:12px 16px;font-size:0.82rem;color:var(--azul);line-height:1.6;min-height:60px;"></div>
+        </div>
+
+        <div class="divisor-titulo" style="margin-top:24px;">CUB — Custo Unitário Básico</div>
+        <div class="grid grid-3">
+          <div class="campo">
+            <label>Fonte do CUB <span class="obrig">*</span></label>
+            <input type="text" id="CUB_FONTE" placeholder="Ex: SINDUSCON JP" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Cidade da Fonte <span class="obrig">*</span></label>
+            <input type="text" id="CUB_CIDADE" placeholder="Ex: João Pessoa" oninput="autoSave()">
+          </div>
+          <div class="campo">
+            <label>Estado da Fonte <span class="obrig">*</span></label>
+            <select id="CUB_UF" onchange="autoSave()">
+              <option value="">Selecione...</option>
+              <option>AL</option><option>BA</option><option>CE</option><option>MA</option><option>PB</option><option>PE</option><option>PI</option><option>RN</option><option>SE</option><option>GO</option><option>SP</option><option>RJ</option><option>MG</option><option>PR</option><option>RS</option><option>SC</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Mês/Ano de Referência <span class="obrig">*</span>
+              <span class="info-icon">ℹ️
+                <span class="tooltip">O CUB adotado não pode ter mais de 2 meses anteriores à data atual, conforme normas e verificação cartorial.</span>
+              </span>
+            </label>
+            <input type="month" id="CUB_MES_REFERENCIA" onchange="verificarCUB();autoSave()">
+            <div class="cub-alerta" id="alertaCUB"></div>
+          </div>
+          <div class="campo">
+            <label>Valor do CUB (R$/m²) <span class="obrig">*</span></label>
+            <input type="text" id="CUB_VALOR" placeholder="Ex: 1.639,59" oninput="autoSave()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 9 — PAVIMENTOS ══ -->
+    <div class="section-card" id="sec-9">
+      <div class="section-header">
+        <div class="section-icon">🏛️</div>
+        <div><div class="section-title">Pavimentos</div><div class="section-subtitle">Descrição e áreas de cada pavimento — Quadro I da NBR 12721</div></div>
+      </div>
+      <div class="section-body">
+        <div class="grid grid-2" style="margin-bottom:16px;">
+          <div class="campo">
+            <label>Fator de Redução (NBR 12721) <span class="obrig">*</span>
+              <span class="info-icon">ℹ️
+                <span class="tooltip">Parâmetro de cálculo das áreas equivalentes. Padrão NBR: 0,25. Altere apenas se necessário.</span>
+              </span>
+            </label>
+            <input type="text" id="FATOR_REDUCAO" value="0,25" oninput="autoSave()">
+          </div>
+        </div>
+        <p style="color:var(--cinza-texto);font-size:0.8rem;margin-bottom:12px;">Adicione uma linha por pavimento. Informe apenas as 6 colunas de entrada — os totais são calculados automaticamente.</p>
+        <div class="tabela-wrapper">
+          <table class="tabela-dinamica" id="tabelaPavimentos">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th style="min-width:160px">Nome do Pavimento</th>
+                <th style="min-width:200px">Descrição (Convenção)</th>
+                <th style="min-width:110px">Área Privativa Coberta Padrão Normal (m²)</th>
+                <th style="min-width:110px">Área Privativa Coberta Padrão Diferente (m²)</th>
+                <th style="min-width:110px">Área Privativa Descoberta (m²)</th>
+                <th style="min-width:110px">Área Uso Comum Coberta Padrão Normal (m²)</th>
+                <th style="min-width:110px">Área Uso Comum Coberta Padrão Diferente (m²)</th>
+                <th style="min-width:110px">Área Uso Comum Descoberta (m²)</th>
+                <th style="min-width:110px">Área Div. Proporcional Coberta Padrão Normal (m²)</th>
+                <th style="min-width:110px">Área Div. Proporcional Coberta Padrão Diferente (m²)</th>
+                <th style="min-width:110px">Área Div. Proporcional Descoberta (m²)</th>
+                <th style="min-width:110px">Total Privativa (AUTO)</th>
+                <th style="min-width:110px">Total Uso Comum (AUTO)</th>
+                <th style="width:60px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="bodyPavimentos"></tbody>
+          </table>
+        </div>
+        <button class="btn-add-linha" onclick="addPavimento()">+ Adicionar Pavimento</button>
+      </div>
+    </div>
+
+    <!-- ══ SEÇÃO 10 — UNIDADES ══ -->
+    <div class="section-card" id="sec-10">
+      <div class="section-header">
+        <div class="section-icon">🏠</div>
+        <div><div class="section-title">Unidades Autônomas</div><div class="section-subtitle">Dados de cada unidade — uma linha por unidade</div></div>
+      </div>
+      <div class="section-body">
+        <p style="color:var(--cinza-texto);font-size:0.8rem;margin-bottom:12px;">Adicione uma linha por unidade. Use o botão 📋 para duplicar uma linha similar e editar apenas o que difere.</p>
+        <div class="tabela-wrapper">
+          <table class="tabela-dinamica" id="tabelaUnidades">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th style="min-width:90px">Designação</th>
+                <th style="min-width:70px">Bloco</th>
+                <th style="min-width:120px">Pavimento</th>
+                <th style="min-width:120px">Tipo de Unidade</th>
+                <th style="min-width:110px">Área Privativa Principal (m²)</th>
+                <th style="min-width:110px">Área Privativa Acessória — excl. vagas (m²)</th>
+                <th style="min-width:70px">Qtd. Vagas Privativas</th>
+                <th style="min-width:100px">Área das Vagas (m²)</th>
+                <th style="min-width:120px">Pavimento das Vagas</th>
+                <th style="min-width:110px">Cobertura da Vaga</th>
+                <th style="min-width:130px">Acessibilidade da Vaga</th>
+                <th style="min-width:110px">Total Privativo (AUTO)</th>
+                <th style="min-width:240px">Texto Descritivo dos Ambientes</th>
+                <th style="width:70px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="bodyUnidades"></tbody>
+          </table>
+        </div>
+        <button class="btn-add-linha" onclick="addUnidade()">+ Adicionar Unidade</button>
+      </div>
+    </div>
+
+    <!-- ══ REVISÃO ══ -->
+    <div class="revisao-card" id="sec-revisao">
+      <div class="revisao-header">
+        <div class="revisao-header-title">📋 Revisão Final dos Dados</div>
+        <div class="revisao-header-sub">Verifique todos os dados antes de gerar os documentos. Clique em "Editar" em qualquer seção para corrigir.</div>
+      </div>
+      <div id="revisaoConteudo"></div>
+      <div class="alerta-cub" id="alertaCUBRevisao"></div>
+      <div class="divisor-titulo" style="margin: 0 28px;">Documentos que serão gerados</div>
+      <div class="docs-lista">
+        <div class="doc-item"><span class="doc-icon">📄</span><span class="doc-nome">Convenção de Condomínio Edilício</span><span class="doc-status">✓ Pronto</span></div>
+        <div class="doc-item"><span class="doc-icon">📄</span><span class="doc-nome">Declaração de Vagas de Garagem</span><span class="doc-status">✓ Pronto</span></div>
+        <div class="doc-item"><span class="doc-icon">📄</span><span class="doc-nome">Memorial de Incorporação</span><span class="doc-status">✓ Pronto</span></div>
+        <div class="doc-item"><span class="doc-icon">📄</span><span class="doc-nome">Memorial de Instituição de Condomínio</span><span class="doc-status">✓ Pronto</span></div>
+      </div>
+      <div class="revisao-footer">
+        <button class="btn btn-prev" onclick="voltarDaRevisao()">← Voltar</button>
+        <button class="btn btn-gerar" id="btnGerar" onclick="gerarDocumentos()">⚡ Gerar Documentos</button>
+      </div>
+    </div>
+
+    <!-- NAVEGAÇÃO -->
+    <div class="nav-btns" id="navBtns">
+      <button class="btn btn-prev" id="btnPrev" onclick="navegar(-1)" style="display:none">← Anterior</button>
+      <span class="step-info" id="stepInfo"></span>
+      <button class="btn btn-next" id="btnNext" onclick="navegar(1)">Próximo →</button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// PAAC — Formulário v02
+// ═══════════════════════════════════════════════════════
+
+// ── USUÁRIO ──
+let usuario = null;
+function switchTab(tab) {
+  document.querySelectorAll('.login-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='cadastro'&&i===1)));
+  document.getElementById('formLogin').classList.toggle('hidden', tab!=='login');
+  document.getElementById('formCadastro').classList.toggle('hidden', tab!=='cadastro');
+}
+function fazerLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  if (!email || !senha) { alert('Preencha e-mail e senha.'); return; }
+  const users = JSON.parse(localStorage.getItem('paac_users') || '[]');
+  const u = users.find(x => x.email === email && x.senha === senha);
+  if (!u) { alert('E-mail ou senha incorretos.'); return; }
+  iniciarSessao(u);
+}
+function fazerCadastro() {
+  const nome = document.getElementById('cadNome').value.trim();
+  const email = document.getElementById('cadEmail').value.trim();
+  const tel = document.getElementById('cadTel').value.trim();
+  const insta = document.getElementById('cadInsta').value.trim();
+  const senha = document.getElementById('cadSenha').value;
+  if (!nome || !email || !tel || !senha) { alert('Preencha todos os campos obrigatórios.'); return; }
+  if (senha.length < 6) { alert('Senha deve ter pelo menos 6 caracteres.'); return; }
+  const users = JSON.parse(localStorage.getItem('paac_users') || '[]');
+  if (users.find(x => x.email === email)) { alert('Este e-mail já está cadastrado.'); return; }
+  const u = { nome, email, tel, insta, senha };
+  users.push(u);
+  localStorage.setItem('paac_users', JSON.stringify(users));
+  iniciarSessao(u);
+}
+function iniciarSessao(u) {
+  usuario = u;
+  localStorage.setItem('paac_sessao', JSON.stringify(u));
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('nomeUsuarioHeader').textContent = u.nome.split(' ')[0];
+  carregarDados();
+}
+function sair() {
+  if (!confirm('Deseja sair? Os dados preenchidos foram salvos automaticamente.')) return;
+  localStorage.removeItem('paac_sessao');
+  location.reload();
+}
+// Verificar sessão ao carregar
+window.addEventListener('load', () => {
+  const s = localStorage.getItem('paac_sessao');
+  if (s) { iniciarSessao(JSON.parse(s)); }
+  buildProgress();
+  updateNav();
+  buildPartesComuns();
+  iniciarAutoSave();
+});
+
+// ── TIPO INSTRUMENTO ──
+let tipoInstrumento = 'convencao';
+function selecionarTipo(tipo) {
+  tipoInstrumento = tipo;
+  document.getElementById('tipoConvencao').classList.toggle('selecionado', tipo==='convencao');
+  document.getElementById('tipoRerratificacao').classList.toggle('selecionado', tipo==='rerratificacao');
+  autoSave();
+}
+
+// ── NAVEGAÇÃO ──
+const secoes = [
+  {id:1,nome:'Empreendimento'},{id:2,nome:'Incorporador'},{id:3,nome:'Resp. Técnico'},
+  {id:4,nome:'Projeto'},{id:5,nome:'Cartório'},{id:6,nome:'Aprovações'},
+  {id:7,nome:'Valores'},{id:8,nome:'Convenção/CUB'},{id:9,nome:'Pavimentos'},{id:10,nome:'Unidades'},
+];
+let secaoAtual = 1;
+let emRevisao = false;
+
+function buildProgress() {
+  const c = document.getElementById('progressSteps');
+  c.innerHTML = '';
+  secoes.forEach((s,i) => {
+    const item = document.createElement('div');
+    item.className = 'step-item'+(s.id===secaoAtual?' active':'')+(s.id<secaoAtual?' done':'');
+    item.onclick = () => { if(!emRevisao) irPara(s.id); };
+    item.innerHTML = `<div class="step-num"><span>${s.id}</span></div><div class="step-name">${s.nome}</div>`;
+    c.appendChild(item);
+    if (i < secoes.length-1) { const conn = document.createElement('div'); conn.className='step-connector'; c.appendChild(conn); }
+  });
+}
+function irPara(n) {
+  if (n<1||n>10) return;
+  document.getElementById('sec-'+secaoAtual).classList.remove('active');
+  secaoAtual = n; emRevisao = false;
+  document.getElementById('sec-'+secaoAtual).classList.add('active');
+  document.getElementById('navBtns').style.display = 'flex';
+  document.getElementById('sec-revisao').classList.remove('active');
+  updateNav(); buildProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navegar(dir) {
+  const nova = secaoAtual + dir;
+  if (nova < 1) return;
+  if (nova > 10) { mostrarRevisao(); return; }
+  irPara(nova);
+}
+function mostrarRevisao() {
+  document.getElementById('sec-'+secaoAtual).classList.remove('active');
+  document.getElementById('sec-revisao').classList.add('active');
+  document.getElementById('navBtns').style.display = 'none';
+  emRevisao = true;
+  construirRevisao();
+  verificarCUBRevisao();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function voltarDaRevisao() {
+  document.getElementById('sec-revisao').classList.remove('active');
+  emRevisao = false;
+  irPara(secaoAtual);
+}
+function updateNav() {
+  const prev = document.getElementById('btnPrev');
+  const next = document.getElementById('btnNext');
+  prev.style.display = secaoAtual>1 ? 'block' : 'none';
+  next.textContent = secaoAtual===10 ? 'Revisar e Gerar →' : 'Próximo →';
+  document.getElementById('stepInfo').textContent = `Etapa ${secaoAtual} de ${secoes.length}`;
+}
+
+// ── AUTOSAVE ──
+let autoSaveTimer = null;
+function iniciarAutoSave() {
+  setInterval(() => autoSave(true), 30000);
+}
+function autoSave(silencioso) {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    const dados = coletarDados();
+    localStorage.setItem('paac_rascunho', JSON.stringify(dados));
+    const agora = new Date();
+    const hora = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const el = document.getElementById('autosaveStatus');
+    el.textContent = `✓ Salvo automaticamente às ${hora}`;
+    el.className = 'autosave-status salvo';
+    setTimeout(() => { el.textContent = '💾 Salvamento automático ativo'; el.className = 'autosave-status'; }, 3000);
+  }, 800);
+}
+function carregarDados() {
+  const raw = localStorage.getItem('paac_rascunho');
+  if (!raw) return;
+  if (!confirm('Existe um rascunho salvo. Deseja retomar o preenchimento anterior?')) { localStorage.removeItem('paac_rascunho'); return; }
+  try {
+    const d = JSON.parse(raw);
+    // Campos simples
+    const ids = ['NOME_EDIFICIO','TIPO_EDIFICACAO','DESTINACAO','CEP_LOCAL','LOGRADOURO','NUMERO_ENDERECO',
+      'LOTE_QUADRA_SETOR','BAIRRO','CIDADE','UF','NOME_INCORPORADOR','CNPJ_CPF_INCORPORADOR',
+      'TIPO_PESSOA_INCORP','CEP_INCORPORADOR','ENDERECO_INCORPORADOR','NOME_REPR_INCORP','CARGO_REPR_INCORP',
+      'QUALIF_REPR_INCORP','NOME_RT','REGISTRO_RT','RRT_ART','DATA_RRT','ENDERECO_RT','TELEFONE_RT',
+      'PROJETO_PADRAO','PADRAO_ACABAMENTO','NUM_PAVIMENTOS','QTD_UNIDADES','QTD_UNIDADES_EXTENSO',
+      'AREA_TERRENO','QTD_BLOCOS','NOMES_BLOCOS','QUARTOS_PADRAO','SALAS_PADRAO','BANHEIROS_PADRAO',
+      'QTD_VAGAS_COBERTAS','QTD_VAGAS_DESCOBERTAS','DESC_BLOCO','DESC_VAGAS',
+      'TITULAR_CARTORIO','ZONA_CARTORIO','NOME_CARTORIO','MATRICULA','LIVRO_MATRICULA',
+      'NUM_ORDEM_AV','DATA_AV','TIPO_CERTIDAO','NUM_CERTIDAO','PREFEITURA','CADASTRO_MUNICIPAL',
+      'DESC_TERRENO','DESC_TITULARIDADE','NUMERO_ALVARA','DATA_ALVARA','ORGAO_EXPEDIDOR_ALVARA',
+      'NUMERO_HABITESE','DATA_HABITESE','ORGAO_EXPEDIDOR_HABITESE','REGIME_INCORPORACAO',
+      'PRAZO_OBRAS_MESES','DATA_INICIO_OBRAS','PRAZO_CARENCIA_DIAS','VALOR_CONSTRUCAO',
+      'VALOR_TERRENO','QTD_ESCADAS','QTD_ELEVADORES','CAPACIDADE_RES_SUP','CAPACIDADE_RES_INF',
+      'CUB_FONTE','CUB_CIDADE','CUB_UF','CUB_MES_REFERENCIA','CUB_VALOR','FATOR_REDUCAO',
+      'partesComuns_outros'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el && d[id] !== undefined) el.value = d[id]; });
+    // Recalcular autos
+    calcularEndereco(); calcularRT(); calcularPrazos(); calcularAcessos();
+    gerarTextoPCC(); verificarCUB();
+    if (d.tipoInstrumento) selecionarTipo(d.tipoInstrumento);
+    // Pavimentos
+    if (d.pavimentos) d.pavimentos.forEach(p => addPavimento(p));
+    // Unidades
+    if (d.unidades) d.unidades.forEach(u => addUnidade(u));
+    // RTs adicionais
+    if (d.rts_adicionais) d.rts_adicionais.forEach(r => addRT(r));
+    // Checkboxes partes comuns
+    if (d.partesComuns_sel) {
+      d.partesComuns_sel.forEach(id => { const el = document.getElementById('pcc_'+id); if(el) el.checked = true; });
+      gerarTextoPCC();
+    }
+  } catch(e) { console.error('Erro ao carregar rascunho:', e); }
+}
+
+// ── CEP ──
+function mascaraCEP(el, tipo) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 5) v = v.slice(0,5)+'-'+v.slice(5,8);
+  else if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
+  el.value = v;
+}
+async function buscarCEP(tipo) {
+  const campo = tipo==='LOCAL' ? 'CEP_LOCAL' : 'CEP_INCORPORADOR';
+  const statusEl = document.getElementById('cep-'+tipo.toLowerCase()+'-status');
+  const cep = document.getElementById(campo).value.replace(/\D/g,'');
+  if (cep.length !== 8) return;
+  statusEl.textContent = '🔍 Buscando endereço...';
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await res.json();
+    if (data.erro) { statusEl.textContent = '⚠️ CEP não encontrado. Preencha manualmente.'; return; }
+    if (tipo === 'LOCAL') {
+      document.getElementById('LOGRADOURO').value = data.logradouro || '';
+      document.getElementById('BAIRRO').value = data.bairro || '';
+      document.getElementById('CIDADE').value = data.localidade || '';
+      document.getElementById('UF').value = data.uf || '';
+      calcularEndereco();
+    } else {
+      document.getElementById('ENDERECO_INCORPORADOR').value = (data.logradouro||'') + (data.bairro?', '+data.bairro:'') + (data.localidade?', '+data.localidade+'/'+data.uf:'');
+    }
+    statusEl.textContent = '✓ Endereço encontrado automaticamente';
+    autoSave();
+  } catch(e) { statusEl.textContent = '⚠️ Erro ao buscar CEP. Preencha manualmente.'; }
+}
+
+// ── ENDEREÇO COMPLETO ──
+function calcularEndereco() {
+  const logr = v('LOGRADOURO'), num = v('NUMERO_ENDERECO'), lote = v('LOTE_QUADRA_SETOR'), bairro = v('BAIRRO');
+  if (!logr) { document.getElementById('ENDERECO_COMPLETO').value=''; return; }
+  let end = logr+', nº '+num;
+  if (lote) end += ', '+lote;
+  end += ' - '+bairro;
+  document.getElementById('ENDERECO_COMPLETO').value = end;
+}
+
+// ── RT ──
+function calcularRT() {
+  const reg = v('REGISTRO_RT').toUpperCase();
+  if (!reg) { ['TITULO_RT','CONSELHO_RT','TIPO_RRT_ART'].forEach(id=>document.getElementById(id).value=''); return; }
+  const isCAU = reg.startsWith('A');
+  document.getElementById('TITULO_RT').value    = isCAU ? 'Arquiteto(a)' : 'Engenheiro(a)';
+  document.getElementById('CONSELHO_RT').value  = isCAU ? 'CAU' : 'CREA';
+  document.getElementById('TIPO_RRT_ART').value = isCAU ? 'RRT' : 'ART';
+}
+
+// ── REGIME BASE LEGAL ──
+document.addEventListener('change', e => {
+  if (e.target.id === 'REGIME_INCORPORACAO') {
+    const mapa = {
+      'REGIME DE PREÇO GLOBAL': 'arts. 41 a 43 da Lei 4.591/1964',
+      'REGIME DE ADMINISTRAÇÃO': 'arts. 58 a 62 da Lei 4.591/1964',
+      'REGIME DE EMPREITADA': 'art. 55 da Lei 4.591/1964'
+    };
+    document.getElementById('BASE_LEGAL_REGIME').value = mapa[e.target.value] || '';
+  }
+});
+
+// ── PRAZOS ──
+const EXTENSO_UNIDADE = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+const DEZENAS = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+const CENTENAS = ['','cem','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+function numExtenso(n) {
+  n = parseInt(n)||0;
+  if (n===0) return 'zero';
+  if (n<20) return EXTENSO_UNIDADE[n];
+  if (n<100) { const d=Math.floor(n/10),u=n%10; return DEZENAS[d]+(u?' e '+EXTENSO_UNIDADE[u]:''); }
+  if (n===100) return 'cem';
+  if (n<1000) { const c=Math.floor(n/100),r=n%100; return CENTENAS[c]+(r?' e '+numExtenso(r):''); }
+  if (n<1000000) { const m=Math.floor(n/1000),r=n%1000; return numExtenso(m)+' mil'+(r?' e '+numExtenso(r):''); }
+  return n.toString();
+}
+function capitalize(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function calcularPrazos() {
+  const meses = parseInt(v('PRAZO_OBRAS_MESES'))||0;
+  const dias   = parseInt(v('PRAZO_CARENCIA_DIAS'))||0;
+  const inicio = v('DATA_INICIO_OBRAS');
+  document.getElementById('PRAZO_OBRAS_EXTENSO').value = meses ? capitalize(numExtenso(meses)) : '';
+  document.getElementById('PRAZO_CARENCIA_EXTENSO').value = dias ? capitalize(numExtenso(dias)) : '';
+  if (inicio && meses) {
+    const d = new Date(inicio+'T12:00:00');
+    d.setMonth(d.getMonth()+meses);
+    document.getElementById('DATA_TERMINO_OBRAS').value = d.toLocaleDateString('pt-BR');
+  } else {
+    document.getElementById('DATA_TERMINO_OBRAS').value = '';
+  }
+}
+
+// ── MOEDA ──
+function mascaraMoeda(el, campo) {
+  let v = el.value.replace(/\D/g,'');
+  if (!v) { el.value=''; calcularExtensoMoeda(campo,0); return; }
+  const num = parseInt(v)/100;
+  el.value = 'R$ '+num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  calcularExtensoMoeda(campo, num);
+}
+function calcularExtensoMoeda(campo, num) {
+  const extensoId = campo+'_EXTENSO';
+  const el = document.getElementById(extensoId);
+  if (!el) return;
+  if (!num) { el.value=''; return; }
+  const inteiro = Math.floor(num);
+  const cents = Math.round((num - inteiro)*100);
+  let texto = capitalize(numExtenso(inteiro));
+  texto += inteiro===1 ? ' Real' : ' Reais';
+  if (cents) texto += ' e '+capitalize(numExtenso(cents))+(cents===1?' Centavo':' Centavos');
+  el.value = texto;
+}
+
+// ── ACESSOS VERTICAIS ──
+function calcularAcessos() {
+  const esc = parseInt(v('QTD_ESCADAS'))||0;
+  const elev = parseInt(v('QTD_ELEVADORES'))||0;
+  let partes = [];
+  if (esc>0) { const n=numExtenso(esc); const q=esc<10?('0'+esc):esc; partes.push(`0${q===('0'+esc)?esc:esc} (${n}) escada${esc>1?'s':''}`); }
+  if (elev>0) { const n=numExtenso(elev); partes.push(`0${elev<10?'0'+elev:elev} (${n}) elevador${elev>1?'es':''}`); }
+  // Formatar corretamente
+  if (esc>0||elev>0) {
+    const numEsc = String(esc).padStart(2,'0');
+    const numElev = String(elev).padStart(2,'0');
+    let texto = '';
+    if (esc>0) texto += `${numEsc} (${numExtenso(esc)}) escada${esc>1?'s':''}`;
+    if (esc>0 && elev>0) texto += ' e ';
+    if (elev>0) texto += `${numElev} (${numExtenso(elev)}) elevador${elev>1?'es':''}`;
+    document.getElementById('DESC_ACESSOS_VERTICAIS').value = texto;
+  } else {
+    document.getElementById('DESC_ACESSOS_VERTICAIS').value = '';
+  }
+}
+
+// ── CUB VERIFICAÇÃO ──
+function verificarCUB() {
+  const val = v('CUB_MES_REFERENCIA');
+  const el = document.getElementById('alertaCUB');
+  if (!val) { el.classList.remove('visivel'); return; }
+  const [ano,mes] = val.split('-').map(Number);
+  const agora = new Date();
+  const cubData = new Date(ano, mes-1, 1);
+  const limite = new Date(agora.getFullYear(), agora.getMonth()-2, 1);
+  if (cubData < limite) {
+    const m1 = new Date(agora.getFullYear(), agora.getMonth()-1, 1);
+    const m2 = new Date(agora.getFullYear(), agora.getMonth()-2, 1);
+    const fmt = d => d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    el.textContent = `⚠️ CUB desatualizado! O mês de referência deve ser ${fmt(m2)} ou ${fmt(m1)}. Por favor, atualize.`;
+    el.classList.add('visivel');
+  } else {
+    el.classList.remove('visivel');
+  }
+}
+function verificarCUBRevisao() {
+  const val = v('CUB_MES_REFERENCIA');
+  const elR = document.getElementById('alertaCUBRevisao');
+  const btnG = document.getElementById('btnGerar');
+  if (!val) { elR.classList.remove('visivel'); btnG.disabled=false; return; }
+  const [ano,mes] = val.split('-').map(Number);
+  const agora = new Date();
+  const cubData = new Date(ano, mes-1, 1);
+  const limite = new Date(agora.getFullYear(), agora.getMonth()-2, 1);
+  if (cubData < limite) {
+    elR.textContent = '⚠️ O CUB informado está desatualizado. Volte à Seção 8 e atualize o mês de referência antes de gerar os documentos.';
+    elR.classList.add('visivel');
+    btnG.disabled = true;
+  } else {
+    elR.classList.remove('visivel');
+    btnG.disabled = false;
+  }
+}
+
+// ── PARTES COMUNS ──
+const partesObrig = [
+  {id:'solo', texto:'Solo em que se acha construído o edifício'},
+  {id:'fundacoes', texto:'Fundações, estrutura de concreto armado, paredes externas e paredes divisórias entre unidades'},
+  {id:'telhados', texto:'Telhados, coberturas e impermeabilizações'},
+  {id:'instalacoes_comuns', texto:'Instalações de água, esgoto, gás e energia elétrica de uso comum'},
+  {id:'circulacao', texto:'Hall de entrada, circulação e acesso de pedestres'},
+  {id:'incendio', texto:'Instalações de combate a incêndio e sistemas de segurança'},
+  {id:'calhas', texto:'Calhas, condutores de águas pluviais e drenagens'},
+];
+const partesOpc = [
+  {id:'escadas', texto:'Escada(s)'},
+  {id:'elevadores', texto:'Elevador(es)'},
+  {id:'rampas', texto:'Rampa(s) de acesso a veículos'},
+  {id:'portoes', texto:'Portão(ões) e acessos'},
+  {id:'garagem_comum', texto:'Garagem/Estacionamento de uso comum'},
+  {id:'reservatorios', texto:'Reservatório(s) de água'},
+  {id:'bombas', texto:'Bombas d\'água'},
+  {id:'bicicletario', texto:'Bicicletário'},
+  {id:'deposito', texto:'Depósito do condomínio'},
+  {id:'lixeira', texto:'Lixeira e área de resíduos'},
+  {id:'salao_festas', texto:'Salão de festas'},
+  {id:'espaco_gourmet', texto:'Espaço gourmet'},
+  {id:'piscina', texto:'Piscina'},
+  {id:'solario', texto:'Solário / Deck'},
+  {id:'churrasqueira', texto:'Churrasqueira'},
+  {id:'academia', texto:'Academia / Fitness'},
+  {id:'playground', texto:'Playground'},
+  {id:'wc_apoio', texto:'WC(s) de apoio ao lazer'},
+  {id:'gerador', texto:'Gerador de energia'},
+  {id:'central_gas', texto:'Central de gás encanado'},
+  {id:'portaria', texto:'Portaria / Guarita'},
+  {id:'dep_gas', texto:'Depósito de gás'},
+  {id:'plataforma_pcd', texto:'Plataforma elevatória para cadeirantes'},
+];
+function buildPartesComuns() {
+  const obrigEl = document.getElementById('partesComuns_obrig');
+  const opcEl = document.getElementById('partesComuns_opc');
+  partesObrig.forEach(p => {
+    obrigEl.innerHTML += `<label style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:var(--azul);cursor:not-allowed;">
+      <input type="checkbox" id="pcc_${p.id}" checked disabled style="margin-top:2px;flex-shrink:0;accent-color:var(--azul);">
+      <span>${p.texto}</span></label>`;
+  });
+  partesOpc.forEach(p => {
+    opcEl.innerHTML += `<label style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:var(--azul);cursor:pointer;">
+      <input type="checkbox" id="pcc_${p.id}" onchange="gerarTextoPCC();autoSave()" style="margin-top:2px;flex-shrink:0;accent-color:var(--azul-claro);">
+      <span>${p.texto}</span></label>`;
+  });
+  gerarTextoPCC();
+}
+function gerarTextoPCC() {
+  const todos = [...partesObrig, ...partesOpc];
+  const selecionados = todos.filter(p => { const el=document.getElementById('pcc_'+p.id); return el && el.checked; }).map(p=>p.texto);
+  const outros = v('partesComuns_outros');
+  if (outros) outros.split(',').forEach(o => { if(o.trim()) selecionados.push(o.trim()); });
+  const alineas = 'abcdefghijklmnopqrstuvwxyz';
+  let texto = 'As partes comuns são todas aquelas a que se refere o artigo 3 da Lei Nº 4.591 de 16 de dezembro de 1964, e, muito especialmente: ';
+  texto += selecionados.map((s,i) => `${alineas[i]}) ${s}`).join('; ')+'.';
+  document.getElementById('previewPartesComuns').textContent = texto;
+  localStorage.setItem('paac_partes_comuns_texto', texto);
+}
+
+// ── TABELA RTs ADICIONAIS ──
+let contRT = 0;
+function addRT(data) {
+  contRT++;
+  const n = contRT;
+  const tbody = document.getElementById('bodyRTs');
+  const tr = document.createElement('tr');
+  tr.id = 'rt-'+n;
+  tr.innerHTML = `
+    <td class="num-col">${n}</td>
+    <td><input type="text" name="RT_NOME_${n}" placeholder="Nome completo" value="${data?.nome||''}" oninput="calcularRTTabela(${n})"></td>
+    <td><input type="text" name="RT_REG_${n}" placeholder="A22625-4 ou 123456-D" value="${data?.registro||''}" oninput="calcularRTTabela(${n})"></td>
+    <td><input type="text" name="RT_RRT_${n}" placeholder="Número RRT/ART" value="${data?.rrt||''}"></td>
+    <td><input type="date" name="RT_DATA_${n}" value="${data?.data_rrt||''}"></td>
+    <td class="auto-col" id="rt-titulo-${n}">—</td>
+    <td class="auto-col" id="rt-conselho-${n}">—</td>
+    <td><input type="text" name="RT_FUNC_${n}" placeholder="Ex: Responsável pela Execução" value="${data?.funcao||''}"></td>
+    <td style="text-align:center"><button class="btn-del-linha" onclick="delLinha('rt-${n}')">🗑</button></td>`;
+  tbody.appendChild(tr);
+  if (data) calcularRTTabela(n);
+}
+function calcularRTTabela(n) {
+  const reg = (document.querySelector(`[name="RT_REG_${n}"]`)?.value||'').toUpperCase();
+  const isCAU = reg.startsWith('A') && reg.length > 1;
+  document.getElementById('rt-titulo-'+n).textContent   = reg ? (isCAU?'Arquiteto(a)':'Engenheiro(a)') : '—';
+  document.getElementById('rt-conselho-'+n).textContent = reg ? (isCAU?'CAU':'CREA') : '—';
+}
+
+// ── TABELA PAVIMENTOS ──
+let contPav = 0;
+function addPavimento(data) {
+  contPav++;
+  const n = contPav;
+  const tbody = document.getElementById('bodyPavimentos');
+  const tr = document.createElement('tr');
+  tr.id = 'pav-'+n;
+  tr.innerHTML = `
+    <td class="num-col">${n}</td>
+    <td><input type="text" name="PAV_NOME_${n}" placeholder="Ex: Pavimento Térreo" value="${data?.PAVIMENTO||''}" style="min-width:140px"></td>
+    <td><textarea name="PAV_DESC_CONV_${n}" rows="2" placeholder="constituído de..." style="min-width:180px;resize:vertical">${data?.DESC_CONVENCAO||''}</textarea></td>
+    <td><input type="text" name="PAV_A2_${n}" placeholder="0,000" value="${data?.AREA_PRIV_COB_PAD||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A3_${n}" placeholder="0,000" value="${data?.AREA_PRIV_COB_DIF||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A4_${n}" placeholder="0,000" value="${data?.AREA_PRIV_DESC||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A7_${n}" placeholder="0,000" value="${data?.AREA_COM_COB_PAD||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A8_${n}" placeholder="0,000" value="${data?.AREA_COM_COB_DIF||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A9_${n}" placeholder="0,000" value="${data?.AREA_COM_DESC||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A12_${n}" placeholder="0,000" value="${data?.AREA_PROP_COB_PAD||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A13_${n}" placeholder="0,000" value="${data?.AREA_PROP_COB_DIF||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="PAV_A14_${n}" placeholder="0,000" value="${data?.AREA_PROP_DESC||''}" oninput="calcTotalPav(${n})" style="min-width:80px"></td>
+    <td class="auto-col" id="pav-tot-priv-${n}">—</td>
+    <td class="auto-col" id="pav-tot-com-${n}">—</td>
+    <td style="text-align:center">
+      <button class="btn-copy-linha" onclick="dupPavimento(${n})" title="Duplicar">📋</button>
+      <button class="btn-del-linha" onclick="delLinha('pav-${n}')">🗑</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+function parseNum(s) { return parseFloat((s||'').replace('.','').replace(',','.'))||0; }
+function fmtNum(n,dec) { return n.toFixed(dec).replace('.',','); }
+function calcTotalPav(n) {
+  const priv = parseNum(qn('PAV_A2_'+n)) + parseNum(qn('PAV_A3_'+n)) + parseNum(qn('PAV_A4_'+n));
+  const com  = parseNum(qn('PAV_A7_'+n)) + parseNum(qn('PAV_A8_'+n)) + parseNum(qn('PAV_A9_'+n));
+  document.getElementById('pav-tot-priv-'+n).textContent = priv>0?fmtNum(priv,3):'—';
+  document.getElementById('pav-tot-com-'+n).textContent  = com>0?fmtNum(com,3):'—';
+  autoSave();
+}
+function dupPavimento(n) {
+  const data = {
+    PAVIMENTO: qn('PAV_NOME_'+n),
+    DESC_CONVENCAO: document.querySelector(`[name="PAV_DESC_CONV_${n}"]`)?.value||'',
+    AREA_PRIV_COB_PAD: qn('PAV_A2_'+n), AREA_PRIV_COB_DIF: qn('PAV_A3_'+n),
+    AREA_PRIV_DESC: qn('PAV_A4_'+n), AREA_COM_COB_PAD: qn('PAV_A7_'+n),
+    AREA_COM_COB_DIF: qn('PAV_A8_'+n), AREA_COM_DESC: qn('PAV_A9_'+n),
+    AREA_PROP_COB_PAD: qn('PAV_A12_'+n), AREA_PROP_COB_DIF: qn('PAV_A13_'+n),
+    AREA_PROP_DESC: qn('PAV_A14_'+n),
+  };
+  addPavimento(data);
+}
+
+// ── TABELA UNIDADES ──
+let contUni = 0;
+function addUnidade(data) {
+  contUni++;
+  const n = contUni;
+  const tbody = document.getElementById('bodyUnidades');
+  const tr = document.createElement('tr');
+  tr.id = 'uni-'+n;
+  tr.innerHTML = `
+    <td class="num-col">${n}</td>
+    <td><input type="text" name="UNI_DESIG_${n}" placeholder="Ex: 001" value="${data?.DESIGNACAO||''}" style="min-width:70px" oninput="autoSave()"></td>
+    <td><input type="text" name="UNI_BLOCO_${n}" placeholder="A" value="${data?.BLOCO||''}" style="min-width:50px"></td>
+    <td><input type="text" name="UNI_PAV_${n}" placeholder="Térreo" value="${data?.PAVIMENTO||''}" style="min-width:100px"></td>
+    <td><select name="UNI_TIPO_${n}" style="min-width:110px">
+      <option value="">Tipo...</option>
+      <option ${data?.TIPO_UNIDADE==='Apartamento'?'selected':''}>Apartamento</option>
+      <option ${data?.TIPO_UNIDADE==='Sala'?'selected':''}>Sala</option>
+      <option ${data?.TIPO_UNIDADE==='Loja'?'selected':''}>Loja</option>
+      <option ${data?.TIPO_UNIDADE==='Vaga Autônoma'?'selected':''}>Vaga Autônoma</option>
+      <option ${data?.TIPO_UNIDADE==='Lote'?'selected':''}>Lote</option>
+    </select></td>
+    <td><input type="text" name="UNI_AP_${n}" placeholder="0,000" value="${data?.AREA_PRIV_PRINCIPAL||''}" oninput="calcTotalUni(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="UNI_AA_${n}" placeholder="0,000" value="${data?.AREA_PRIV_ACESS_OUTRAS||''}" oninput="calcTotalUni(${n})" style="min-width:80px"></td>
+    <td><input type="number" name="UNI_QV_${n}" placeholder="0" value="${data?.QTD_VAGAS_PRIV||''}" min="0" style="min-width:55px" oninput="autoSave()"></td>
+    <td><input type="text" name="UNI_AV_${n}" placeholder="0,000" value="${data?.AREA_VAGAS_PRIV||''}" oninput="calcTotalUni(${n})" style="min-width:80px"></td>
+    <td><input type="text" name="UNI_PV_${n}" placeholder="Ex: Semi-Sub" value="${data?.PAV_VAGAS_PRIV||''}" style="min-width:90px"></td>
+    <td><select name="UNI_COB_${n}" style="min-width:100px">
+      <option value="">Cobertura...</option>
+      <option ${data?.COB_VAGAS_PRIV==='Coberta'?'selected':''}>Coberta</option>
+      <option ${data?.COB_VAGAS_PRIV==='Descoberta'?'selected':''}>Descoberta</option>
+      <option ${data?.COB_VAGAS_PRIV==='Semicoberta'?'selected':''}>Semicoberta</option>
+      <option ${data?.COB_VAGAS_PRIV==='Semidescobertas'?'selected':''}>Semidescobertas</option>
+    </select></td>
+    <td><select name="UNI_ACESS_${n}" style="min-width:120px">
+      <option value="">Acessib...</option>
+      <option ${data?.ACESS_VAGAS_PRIV==='Normal'?'selected':''}>Normal</option>
+      <option ${data?.ACESS_VAGAS_PRIV==='Adaptada PCD'?'selected':''}>Adaptada PCD</option>
+      <option ${data?.ACESS_VAGAS_PRIV==='Vaga de Idoso'?'selected':''}>Vaga de Idoso</option>
+    </select></td>
+    <td class="auto-col" id="uni-tot-${n}">—</td>
+    <td><textarea name="UNI_TEXTO_${n}" rows="2" placeholder="sala única de estar e jantar, hall de circulação..." style="min-width:200px;resize:vertical">${data?.TEXTO_DESCRITIVO||''}</textarea></td>
+    <td style="text-align:center">
+      <button class="btn-copy-linha" onclick="dupUnidade(${n})" title="Duplicar linha">📋</button>
+      <button class="btn-del-linha" onclick="delLinha('uni-${n}')">🗑</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+function calcTotalUni(n) {
+  const total = parseNum(qn('UNI_AP_'+n)) + parseNum(qn('UNI_AA_'+n)) + parseNum(qn('UNI_AV_'+n));
+  document.getElementById('uni-tot-'+n).textContent = total>0?fmtNum(total,3):'—';
+  autoSave();
+}
+function dupUnidade(n) {
+  const sel = name => document.querySelector(`[name="${name}"]`)?.value||'';
+  const data = {
+    DESIGNACAO:'', BLOCO:sel('UNI_BLOCO_'+n), PAVIMENTO:sel('UNI_PAV_'+n),
+    TIPO_UNIDADE:sel('UNI_TIPO_'+n), AREA_PRIV_PRINCIPAL:sel('UNI_AP_'+n),
+    AREA_PRIV_ACESS_OUTRAS:sel('UNI_AA_'+n), QTD_VAGAS_PRIV:sel('UNI_QV_'+n),
+    AREA_VAGAS_PRIV:sel('UNI_AV_'+n), PAV_VAGAS_PRIV:sel('UNI_PV_'+n),
+    COB_VAGAS_PRIV:sel('UNI_COB_'+n), ACESS_VAGAS_PRIV:sel('UNI_ACESS_'+n),
+    TEXTO_DESCRITIVO:document.querySelector(`[name="UNI_TEXTO_${n}"]`)?.value||''
+  };
+  addUnidade(data);
+}
+
+// ── HELPERS ──
+function v(id) { const el=document.getElementById(id); return el?el.value.trim():''; }
+function qn(name) { const el=document.querySelector(`[name="${name}"]`); return el?el.value.trim():''; }
+function delLinha(id) { const el=document.getElementById(id); if(el){el.remove();autoSave();} }
+
+// ── REVISÃO ──
+function construirRevisao() {
+  const container = document.getElementById('revisaoConteudo');
+  const secoesRevisao = [
+    {num:1, titulo:'Identificação do Empreendimento', campos:[
+      {l:'Tipo de Instrumento',v:tipoInstrumento==='rerratificacao'?'Rerratificação da Convenção':'Convenção de Condomínio'},
+      {l:'Nome do Edifício',id:'NOME_EDIFICIO'},{l:'Tipo de Edificação',id:'TIPO_EDIFICACAO'},
+      {l:'Destinação',id:'DESTINACAO'},{l:'Endereço Completo',id:'ENDERECO_COMPLETO'},{l:'CEP',id:'CEP_LOCAL'},
+    ]},
+    {num:2, titulo:'Incorporador', campos:[
+      {l:'Nome/Razão Social',id:'NOME_INCORPORADOR'},{l:'CNPJ/CPF',id:'CNPJ_CPF_INCORPORADOR'},
+      {l:'Tipo de Pessoa',id:'TIPO_PESSOA_INCORP'},{l:'Representante',id:'NOME_REPR_INCORP'},
+      {l:'Cargo',id:'CARGO_REPR_INCORP'},
+    ]},
+    {num:3, titulo:'Responsável Técnico', campos:[
+      {l:'Nome do RT',id:'NOME_RT'},{l:'Registro',id:'REGISTRO_RT'},
+      {l:'Título',id:'TITULO_RT'},{l:'Conselho',id:'CONSELHO_RT'},{l:'Tipo RRT/ART',id:'TIPO_RRT_ART'},
+    ]},
+    {num:4, titulo:'Dados do Projeto', campos:[
+      {l:'Padrão NBR',id:'PROJETO_PADRAO'},{l:'Padrão de Acabamento',id:'PADRAO_ACABAMENTO'},
+      {l:'Nº de Pavimentos',id:'NUM_PAVIMENTOS'},{l:'Total de Unidades',id:'QTD_UNIDADES'},
+      {l:'Área do Terreno',id:'AREA_TERRENO'},
+    ]},
+    {num:5, titulo:'Cartório e Terreno', campos:[
+      {l:'Cartório',id:'NOME_CARTORIO'},{l:'Matrícula',id:'MATRICULA'},{l:'Livro',id:'LIVRO_MATRICULA'},
+      {l:'Prefeitura',id:'PREFEITURA'},{l:'Tipo de Certidão',id:'TIPO_CERTIDAO'},
+    ]},
+    {num:6, titulo:'Aprovações', campos:[
+      {l:'Número do Alvará',id:'NUMERO_ALVARA'},{l:'Data do Alvará',id:'DATA_ALVARA'},
+      {l:'Número do Habite-se',id:'NUMERO_HABITESE'},{l:'Data do Habite-se',id:'DATA_HABITESE'},
+    ]},
+    {num:7, titulo:'Incorporação e Valores', campos:[
+      {l:'Regime',id:'REGIME_INCORPORACAO'},{l:'Prazo Previsto (meses)',id:'PRAZO_OBRAS_MESES'},
+      {l:'Prazo por Extenso',id:'PRAZO_OBRAS_EXTENSO'},{l:'Término Previsto',id:'DATA_TERMINO_OBRAS'},
+      {l:'Valor da Construção',id:'VALOR_CONSTRUCAO'},{l:'Valor do Terreno',id:'VALOR_TERRENO'},
+      {l:'Acessos Verticais',id:'DESC_ACESSOS_VERTICAIS'},
+    ]},
+    {num:8, titulo:'Convenção e CUB', campos:[
+      {l:'CUB — Fonte',id:'CUB_FONTE'},{l:'CUB — Mês/Ano',id:'CUB_MES_REFERENCIA'},{l:'CUB — Valor',id:'CUB_VALOR'},
+    ]},
+    {num:9, titulo:'Pavimentos', campos:[{l:'Total de pavimentos cadastrados',v:String(contPav)}]},
+    {num:10, titulo:'Unidades Autônomas', campos:[{l:'Total de unidades cadastradas',v:String(contUni)}]},
+  ];
+  container.innerHTML = secoesRevisao.map(s => {
+    const itens = s.campos.map(c => {
+      const val = c.v !== undefined ? c.v : v(c.id||'');
+      return `<div class="revisao-item"><div class="label">${c.l}</div><div class="valor ${val?'':'vazio'}">${val||'Não preenchido'}</div></div>`;
+    }).join('');
+    return `<div class="revisao-secao">
+      <div class="revisao-secao-header" onclick="toggleRevisaoSecao(${s.num})">
+        <div class="revisao-secao-titulo"><span>${s.num}.</span> ${s.titulo}</div>
+        <button class="btn-editar-secao" onclick="event.stopPropagation();irPara(${s.num})">✏️ Editar</button>
+      </div>
+      <div class="revisao-secao-body" id="rev-body-${s.num}">
+        <div class="revisao-grid">${itens}</div>
+      </div>
+    </div>`;
+  }).join('');
+  // Abrir seção 1 por padrão
+  const el = document.getElementById('rev-body-1');
+  if (el) el.classList.add('aberto');
+}
+function toggleRevisaoSecao(n) {
+  const el = document.getElementById('rev-body-'+n);
+  if (el) el.classList.toggle('aberto');
+}
+
+// ── COLETAR DADOS ──
+function coletarDados() {
+  const ids = ['NOME_EDIFICIO','TIPO_EDIFICACAO','DESTINACAO','CEP_LOCAL','LOGRADOURO','NUMERO_ENDERECO',
+    'LOTE_QUADRA_SETOR','BAIRRO','CIDADE','UF','ENDERECO_COMPLETO',
+    'NOME_INCORPORADOR','CNPJ_CPF_INCORPORADOR','TIPO_PESSOA_INCORP','CEP_INCORPORADOR','ENDERECO_INCORPORADOR',
+    'NOME_REPR_INCORP','CARGO_REPR_INCORP','QUALIF_REPR_INCORP',
+    'NOME_RT','REGISTRO_RT','RRT_ART','DATA_RRT','TITULO_RT','CONSELHO_RT','TIPO_RRT_ART','ENDERECO_RT','TELEFONE_RT',
+    'PROJETO_PADRAO','PADRAO_ACABAMENTO','NUM_PAVIMENTOS','QTD_UNIDADES','QTD_UNIDADES_EXTENSO',
+    'AREA_TERRENO','QTD_BLOCOS','NOMES_BLOCOS','DESC_BLOCO','DESC_VAGAS',
+    'QTD_VAGAS_COBERTAS','QTD_VAGAS_DESCOBERTAS','QUARTOS_PADRAO','SALAS_PADRAO','BANHEIROS_PADRAO',
+    'TITULAR_CARTORIO','ZONA_CARTORIO','NOME_CARTORIO','MATRICULA','LIVRO_MATRICULA',
+    'NUM_ORDEM_AV','DATA_AV','TIPO_CERTIDAO','NUM_CERTIDAO','PREFEITURA','CADASTRO_MUNICIPAL',
+    'DESC_TERRENO','DESC_TITULARIDADE',
+    'NUMERO_ALVARA','DATA_ALVARA','ORGAO_EXPEDIDOR_ALVARA',
+    'NUMERO_HABITESE','DATA_HABITESE','ORGAO_EXPEDIDOR_HABITESE',
+    'REGIME_INCORPORACAO','BASE_LEGAL_REGIME','PRAZO_OBRAS_MESES','PRAZO_OBRAS_EXTENSO',
+    'DATA_INICIO_OBRAS','DATA_TERMINO_OBRAS','PRAZO_CARENCIA_DIAS','PRAZO_CARENCIA_EXTENSO',
+    'VALOR_CONSTRUCAO','VALOR_CONSTRUCAO_EXTENSO','VALOR_TERRENO','VALOR_TERRENO_EXTENSO',
+    'QTD_ESCADAS','QTD_ELEVADORES','DESC_ACESSOS_VERTICAIS',
+    'CAPACIDADE_RES_SUP','CAPACIDADE_RES_INF','CAPACIDADE_RES_TOTAL',
+    'CUB_FONTE','CUB_CIDADE','CUB_UF','CUB_MES_REFERENCIA','CUB_VALOR','FATOR_REDUCAO',
+    'partesComuns_outros',
+  ];
+  const dados = { tipoInstrumento };
+  ids.forEach(id => { dados[id] = v(id); });
+  dados.DESC_PARTES_COMUNS = localStorage.getItem('paac_partes_comuns_texto')||'';
+  dados.partesComuns_sel = [...partesObrig,...partesOpc].filter(p=>{ const el=document.getElementById('pcc_'+p.id); return el&&el.checked; }).map(p=>p.id);
+  // RTs adicionais
+  dados.rts_adicionais = [];
+  for(let i=1;i<=contRT;i++){
+    const row=document.getElementById('rt-'+i); if(!row) continue;
+    dados.rts_adicionais.push({
+      nome:qn('RT_NOME_'+i), registro:qn('RT_REG_'+i), rrt:qn('RT_RRT_'+i),
+      data_rrt:qn('RT_DATA_'+i), funcao:qn('RT_FUNC_'+i)
+    });
+  }
+  // Pavimentos
+  dados.pavimentos = [];
+  for(let i=1;i<=contPav;i++){
+    const row=document.getElementById('pav-'+i); if(!row) continue;
+    dados.pavimentos.push({
+      PAVIMENTO:qn('PAV_NOME_'+i), DESC_CONVENCAO:document.querySelector(`[name="PAV_DESC_CONV_${i}"]`)?.value||'',
+      AREA_PRIV_COB_PAD:qn('PAV_A2_'+i), AREA_PRIV_COB_DIF:qn('PAV_A3_'+i), AREA_PRIV_DESC:qn('PAV_A4_'+i),
+      AREA_COM_COB_PAD:qn('PAV_A7_'+i), AREA_COM_COB_DIF:qn('PAV_A8_'+i), AREA_COM_DESC:qn('PAV_A9_'+i),
+      AREA_PROP_COB_PAD:qn('PAV_A12_'+i), AREA_PROP_COB_DIF:qn('PAV_A13_'+i), AREA_PROP_DESC:qn('PAV_A14_'+i),
+    });
+  }
+  // Unidades
+  dados.unidades = [];
+  for(let i=1;i<=contUni;i++){
+    const row=document.getElementById('uni-'+i); if(!row) continue;
+    dados.unidades.push({
+      DESIGNACAO:qn('UNI_DESIG_'+i), BLOCO:qn('UNI_BLOCO_'+i), PAVIMENTO:qn('UNI_PAV_'+i),
+      TIPO_UNIDADE:qn('UNI_TIPO_'+i), AREA_PRIV_PRINCIPAL:qn('UNI_AP_'+i),
+      AREA_PRIV_ACESS_OUTRAS:qn('UNI_AA_'+i), QTD_VAGAS_PRIV:qn('UNI_QV_'+i),
+      AREA_VAGAS_PRIV:qn('UNI_AV_'+i), PAV_VAGAS_PRIV:qn('UNI_PV_'+i),
+      COB_VAGAS_PRIV:qn('UNI_COB_'+i), ACESS_VAGAS_PRIV:qn('UNI_ACESS_'+i),
+      TEXTO_DESCRITIVO:document.querySelector(`[name="UNI_TEXTO_${i}"]`)?.value||'',
+    });
+  }
+  return dados;
+}
+
+// ── GERAR DOCUMENTOS ──
+function gerarDocumentos() {
+  const dados = coletarDados();
+  const agora = new Date();
+  dados.DATA_GERACAO = agora.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  dados.DATA_DOCUMENTO = agora.toLocaleDateString('pt-BR');
+  dados.DATA_DOCUMENTO_EXTENSO = `${dados.CIDADE}, ${dados.DATA_GERACAO}`;
+  const json = JSON.stringify(dados, null, 2);
+  const blob = new Blob([json],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'paac-dados-'+(dados.NOME_EDIFICIO||'projeto').replace(/\s+/g,'-').toLowerCase()+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('✅ Dados coletados e exportados com sucesso!\n\nO arquivo JSON foi baixado. Na próxima fase, este botão enviará os dados ao sistema PAAC para gerar automaticamente os 4 documentos.');
+}
+</script>
+</body>
+</html>
