@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const COOKIE_SECRET = process.env.COOKIE_SECRET || 'paac-e0-temp';
@@ -22,8 +23,60 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
 
-function lerDados() { try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'usuarios.json'), 'utf-8')); } catch(e) { return { senhaAdminHash:'', senhaMestraHash:'', usuarios:[] }; } }
-function salvarDados(d) { fs.writeFileSync(path.join(__dirname, 'usuarios.json'), JSON.stringify(d,null,2), 'utf-8'); }
+// ═══════════════════════════════════════════════════════════════
+// PERSISTÊNCIA: salva localmente E atualiza variável no Railway
+// Requer as variáveis de ambiente: RAILWAY_TOKEN e RAILWAY_SERVICE_ID
+// ═══════════════════════════════════════════════════════════════
+function lerDados() {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'usuarios.json'), 'utf-8')); }
+  catch(e) { return { senhaAdminHash:'', senhaMestraHash:'', usuarios:[] }; }
+}
+
+function salvarDados(d) {
+  // 1. Salva no arquivo local (funciona enquanto o servidor está rodando)
+  var json = JSON.stringify(d, null, 2);
+  fs.writeFileSync(path.join(__dirname, 'usuarios.json'), json, 'utf-8');
+
+  // 2. Persiste na variável USUARIOS_JSON do Railway (sobrevive a reinicializações)
+  var token = process.env.RAILWAY_TOKEN;
+  var serviceId = process.env.RAILWAY_SERVICE_ID;
+  var environmentId = process.env.RAILWAY_ENVIRONMENT_ID;
+
+  if (!token || !serviceId || !environmentId) {
+    console.log('AVISO: RAILWAY_TOKEN, RAILWAY_SERVICE_ID ou RAILWAY_ENVIRONMENT_ID nao configurados. Dados salvos apenas localmente.');
+    return;
+  }
+
+  var mutation = JSON.stringify({
+    query: 'mutation { variableUpsert(input: { projectId: "", serviceId: "' + serviceId + '", environmentId: "' + environmentId + '", name: "USUARIOS_JSON", value: ' + JSON.stringify(json) + ' }) }'
+  });
+
+  var options = {
+    hostname: 'backboard.railway.app',
+    path: '/graphql/v2',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    }
+  };
+
+  var req = https.request(options, function(res) {
+    var body = '';
+    res.on('data', function(chunk) { body += chunk; });
+    res.on('end', function() {
+      try {
+        var r = JSON.parse(body);
+        if (r.errors) { console.error('Railway API erro:', JSON.stringify(r.errors)); }
+        else { console.log('USUARIOS_JSON atualizado no Railway.'); }
+      } catch(e) { console.error('Railway API parse erro:', e.message); }
+    });
+  });
+  req.on('error', function(e) { console.error('Railway API conexao erro:', e.message); });
+  req.write(mutation);
+  req.end();
+}
+
 function buscarUsuario(email) { return lerDados().usuarios.find(u => u.email.toLowerCase() === email.toLowerCase().trim()); }
 function verificarBloqueio(email) { var r=tentativasLogin[email.toLowerCase()]; if(!r)return false; if(r.bloqueadoAte&&Date.now()<r.bloqueadoAte)return Math.ceil((r.bloqueadoAte-Date.now())/60000); if(r.bloqueadoAte)delete tentativasLogin[email.toLowerCase()]; return false; }
 function registrarFalha(email) { var c=email.toLowerCase(); if(!tentativasLogin[c])tentativasLogin[c]={tentativas:0}; tentativasLogin[c].tentativas++; if(tentativasLogin[c].tentativas>=MAX_TENTATIVAS)tentativasLogin[c].bloqueadoAte=Date.now()+TEMPO_BLOQUEIO; }
@@ -32,7 +85,6 @@ function lerSessao(req) { try { var c=req.signedCookies.paac_sessao; return c?JS
 
 var fonts = '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">';
 
-// Script que vai em TODAS as páginas - toggle de senha via data-attribute
 var olhoScript = '<script>document.addEventListener("click",function(e){var b=e.target.closest("[data-toggle-pw]");if(!b)return;var id=b.getAttribute("data-toggle-pw");var i=document.getElementById(id);if(i)i.type=i.type==="password"?"text":"password"});<\/script>';
 
 function senhaInput(id, name, ph, req) {
@@ -70,7 +122,8 @@ app.post('/criar-senha', async function(req,res) {
   var d=lerDados();var idx=d.usuarios.findIndex(x => x.email.toLowerCase()===email.toLowerCase());
   if(idx<0)return res.send(htmlLogin('E-mail nao encontrado.'));
   if(d.usuarios[idx].senhaHash&&d.usuarios[idx].senhaHash!=='')return res.send(htmlLogin('Conta ja possui senha.'));
-  d.usuarios[idx].senhaHash=await bcrypt.hash(senha,12);salvarDados(d);
+  d.usuarios[idx].senhaHash=await bcrypt.hash(senha,12);
+  salvarDados(d);
   res.send(htmlLogin('Senha criada! Faca login.'));
 });
 
@@ -185,11 +238,11 @@ function htmlEmergencia(msg, msgOk) {
 }
 
 function htmlPainelAdmin(adminLogado) {
-  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PAAC Painel</title>' + fonts + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"DM Sans",sans-serif;background:#f4f6fb;color:#0d1f3c;min-height:100vh}.hdr{background:linear-gradient(135deg,#3d1515,#6b1a1a);border-bottom:3px solid #c9a84c;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}.hdr-left{display:flex;align-items:center;gap:12px}.hdr-sigla{font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700;color:#c9a84c;letter-spacing:3px}.hdr-sub{color:rgba(255,255,255,.7);font-size:.72rem}.hdr-right{display:flex;align-items:center;gap:10px}.badge{background:rgba(192,57,43,.3);border:1px solid rgba(192,57,43,.5);color:#ffb3b3;padding:3px 10px;border-radius:20px;font-size:.65rem}.btn-sair,.btn-voltar{padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;font-family:"DM Sans",sans-serif;text-decoration:none;border:1px solid rgba(255,255,255,.2)}.btn-sair{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}.btn-voltar{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);color:#c9a84c}.main{max-width:860px;margin:0 auto;padding:24px 16px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center}.stat-num{font-size:1.5rem;font-weight:700}.stat-label{font-size:.68rem;color:#6b7a99;margin-top:2px}.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(13,31,60,.1);margin-bottom:20px;overflow:hidden}.card-hdr{background:linear-gradient(135deg,#0d1f3c,#1a3a6b);padding:14px 22px;display:flex;align-items:center;gap:10px}.card-icon{font-size:1rem}.card-title{font-family:"Cormorant Garamond",serif;font-size:1.1rem;font-weight:600;color:#fff}.card-body{padding:18px 22px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.form-row.tri{grid-template-columns:1fr 1fr 1fr}.campo{display:flex;flex-direction:column;gap:3px}.campo label{font-size:.73rem;font-weight:600}.campo input,.campo select{border:1.5px solid #dde2ec;border-radius:8px;padding:8px 11px;font-size:.84rem;font-family:"DM Sans",sans-serif;outline:none;width:100%}.campo .dica{font-size:.67rem;color:#6b7a99}.btn-add{background:linear-gradient(135deg,#c9a84c,#a87d2a);color:#0d1f3c;border:none;border-radius:10px;padding:10px;font-family:"DM Sans",sans-serif;font-size:.86rem;font-weight:700;cursor:pointer;width:100%;margin-top:6px}.msg{padding:8px 12px;border-radius:8px;font-size:.78rem;margin-bottom:10px;display:none}.msg.ok{display:block;background:#e8f7ef;border:1px solid rgba(26,122,74,.3);color:#1a7a4a}.msg.erro{display:block;background:#fdf2f2;border:1px solid rgba(192,57,43,.3);color:#c0392b}.tabela{width:100%;border-collapse:collapse;font-size:.8rem}.tabela th{background:#0d1f3c;color:#fff;padding:9px 10px;text-align:left;font-size:.7rem}.tabela td{padding:8px 10px;border-bottom:1px solid #dde2ec;vertical-align:middle}.tabela tr:hover td{background:#f4f6fb}.status,.papel-tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:600}.status.ativo{background:#e8f7ef;color:#1a7a4a}.status.inativo{background:#fdf2f2;color:#c0392b}.papel-tag.admin{background:#fdf2f2;color:#8b1a1a;border:1px solid rgba(139,26,26,.2)}.papel-tag.usuario{background:#ebf3fb;color:#2a5298;border:1px solid rgba(42,82,152,.2)}.btn-sm{border:none;border-radius:6px;padding:4px 10px;font-size:.7rem;cursor:pointer;font-family:"DM Sans",sans-serif;margin-right:3px}.btn-toggle{background:#ebf3fb;color:#2a5298;border:1px solid rgba(42,82,152,.2)}.btn-del{background:#fdf2f2;color:#c0392b;border:1px solid rgba(192,57,43,.2)}.btn-reset{background:#fff8ec;color:#b7701a;border:1px solid rgba(183,112,26,.3)}.vazio{text-align:center;color:#6b7a99;padding:24px}.protegido-tag{font-size:.6rem;color:#b7701a;background:#fff8ec;padding:1px 5px;border-radius:4px;margin-left:4px}.sem-senha-tag{font-size:.6rem;color:#2a5298;background:#ebf3fb;padding:1px 5px;border-radius:4px;margin-left:4px}@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}.form-row,.form-row.tri{grid-template-columns:1fr}}</style></head><body><div class="hdr"><div class="hdr-left"><div class="hdr-sigla">PAAC</div><div class="hdr-sub">Painel — ' + adminLogado.nome + '</div></div><div class="hdr-right"><span class="badge">ADMIN E0</span><a href="/" class="btn-voltar">Voltar</a><a href="/sair" class="btn-sair">Sair</a></div></div><div class="main"><div class="stats"><div class="stat"><div class="stat-num" id="stTotal">0</div><div class="stat-label">Total</div></div><div class="stat"><div class="stat-num" id="stAtivos">0</div><div class="stat-label">Ativos</div></div><div class="stat"><div class="stat-num" id="stAdmins">0</div><div class="stat-label">Admins</div></div><div class="stat"><div class="stat-num" id="stInativos">0</div><div class="stat-label">Inativos</div></div></div><div class="card"><div class="card-hdr"><span class="card-icon">+</span><span class="card-title">Cadastrar Novo Usuario</span></div><div class="card-body"><div class="msg" id="msgCad"></div><div class="form-row"><div class="campo"><label>Nome *</label><input type="text" id="cNome" placeholder="Joao da Silva"></div><div class="campo"><label>E-mail *</label><input type="email" id="cEmail" placeholder="joao@email.com"></div></div><div class="form-row tri"><div class="campo"><label>Senha (opcional)</label>' + senhaInput('cSenha','','Branco = cria no 1o acesso',false).replace('name=""','') + '<span class="dica">Em branco: cria no 1o acesso.</span></div><div class="campo"><label>Papel</label><select id="cPapel"><option value="usuario">Usuario</option><option value="admin">Admin</option></select><span class="dica">Max 3 admins.</span></div><div class="campo"><label>Obs</label><input type="text" id="cObs" placeholder="Opcional"></div></div><button class="btn-add" id="btnCadastrar">Cadastrar</button></div></div><div class="card"><div class="card-hdr"><span class="card-icon">&#128274;</span><span class="card-title">Alterar Minha Senha</span></div><div class="card-body"><div class="msg" id="msgSenha"></div><div class="form-row tri"><div class="campo"><label>Atual *</label>' + senhaInput('sAtual','','','false') + '</div><div class="campo"><label>Nova *</label>' + senhaInput('sNova','','Min 6 chars',false) + '</div><div class="campo" style="justify-content:flex-end"><button class="btn-add" style="margin-top:0" id="btnAltSenha">Alterar</button></div></div></div></div><div class="card"><div class="card-hdr"><span class="card-icon">&#128101;</span><span class="card-title">Usuarios Cadastrados</span></div><div class="card-body" style="padding:0;overflow-x:auto"><table class="tabela"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th>Senha</th><th>Ultimo acesso</th><th>Acoes</th></tr></thead><tbody id="corpo"><tr><td colspan="7" class="vazio">Carregando...</td></tr></tbody></table></div></div></div><script>window._ADMIN_EMAIL="' + adminLogado.email + '";</script><script src="/painel/admin.js"></script>' + olhoScript + '</body></html>';
+  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PAAC Painel</title>' + fonts + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"DM Sans",sans-serif;background:#f4f6fb;color:#0d1f3c;min-height:100vh}.hdr{background:linear-gradient(135deg,#3d1515,#6b1a1a);border-bottom:3px solid #c9a84c;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}.hdr-left{display:flex;align-items:center;gap:12px}.hdr-sigla{font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700;color:#c9a84c;letter-spacing:3px}.hdr-sub{color:rgba(255,255,255,.7);font-size:.72rem}.hdr-right{display:flex;align-items:center;gap:10px}.badge{background:rgba(192,57,43,.3);border:1px solid rgba(192,57,43,.5);color:#ffb3b3;padding:3px 10px;border-radius:20px;font-size:.65rem}.btn-sair,.btn-voltar{padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;font-family:"DM Sans",sans-serif;text-decoration:none;border:1px solid rgba(255,255,255,.2)}.btn-sair{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}.btn-voltar{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);color:#c9a84c}.main{max-width:860px;margin:0 auto;padding:24px 16px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center}.stat-num{font-size:1.5rem;font-weight:700}.stat-label{font-size:.68rem;color:#6b7a99;margin-top:2px}.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(13,31,60,.1);margin-bottom:20px;overflow:hidden}.card-hdr{background:linear-gradient(135deg,#0d1f3c,#1a3a6b);padding:14px 22px;display:flex;align-items:center;gap:10px}.card-icon{font-size:1rem}.card-title{font-family:"Cormorant Garamond",serif;font-size:1.1rem;font-weight:600;color:#fff}.card-body{padding:18px 22px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.form-row.tri{grid-template-columns:1fr 1fr 1fr}.campo{display:flex;flex-direction:column;gap:3px}.campo label{font-size:.73rem;font-weight:600}.campo input,.campo select{border:1.5px solid #dde2ec;border-radius:8px;padding:8px 11px;font-size:.84rem;font-family:"DM Sans",sans-serif;outline:none;width:100%}.campo .dica{font-size:.67rem;color:#6b7a99}.btn-add{background:linear-gradient(135deg,#c9a84c,#a87d2a);color:#0d1f3c;border:none;border-radius:10px;padding:10px;font-family:"DM Sans",sans-serif;font-size:.86rem;font-weight:700;cursor:pointer;width:100%;margin-top:6px}.msg{padding:8px 12px;border-radius:8px;font-size:.78rem;margin-bottom:10px;display:none}.msg.ok{display:block;background:#e8f7ef;border:1px solid rgba(26,122,74,.3);color:#1a7a4a}.msg.erro{display:block;background:#fdf2f2;border:1px solid rgba(192,57,43,.3);color:#c0392b}.tabela{width:100%;border-collapse:collapse;font-size:.8rem}.tabela th{background:#0d1f3c;color:#fff;padding:9px 10px;text-align:left;font-size:.7rem}.tabela td{padding:8px 10px;border-bottom:1px solid #dde2ec;vertical-align:middle}.tabela tr:hover td{background:#f4f6fb}.status,.papel-tag{display-inline-block;padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:600}.status.ativo{background:#e8f7ef;color:#1a7a4a}.status.inativo{background:#fdf2f2;color:#c0392b}.papel-tag.admin{background:#fdf2f2;color:#8b1a1a;border:1px solid rgba(139,26,26,.2)}.papel-tag.usuario{background:#ebf3fb;color:#2a5298;border:1px solid rgba(42,82,152,.2)}.btn-sm{border:none;border-radius:6px;padding:4px 10px;font-size:.7rem;cursor:pointer;font-family:"DM Sans",sans-serif;margin-right:3px}.btn-toggle{background:#ebf3fb;color:#2a5298;border:1px solid rgba(42,82,152,.2)}.btn-del{background:#fdf2f2;color:#c0392b;border:1px solid rgba(192,57,43,.2)}.btn-reset{background:#fff8ec;color:#b7701a;border:1px solid rgba(183,112,26,.3)}.vazio{text-align:center;color:#6b7a99;padding:24px}.protegido-tag{font-size:.6rem;color:#b7701a;background:#fff8ec;padding:1px 5px;border-radius:4px;margin-left:4px}.sem-senha-tag{font-size:.6rem;color:#2a5298;background:#ebf3fb;padding:1px 5px;border-radius:4px;margin-left:4px}@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}.form-row,.form-row.tri{grid-template-columns:1fr}}</style></head><body><div class="hdr"><div class="hdr-left"><div class="hdr-sigla">PAAC</div><div class="hdr-sub">Painel — ' + adminLogado.nome + '</div></div><div class="hdr-right"><span class="badge">ADMIN E0</span><a href="/" class="btn-voltar">Voltar</a><a href="/sair" class="btn-sair">Sair</a></div></div><div class="main"><div class="stats"><div class="stat"><div class="stat-num" id="stTotal">0</div><div class="stat-label">Total</div></div><div class="stat"><div class="stat-num" id="stAtivos">0</div><div class="stat-label">Ativos</div></div><div class="stat"><div class="stat-num" id="stAdmins">0</div><div class="stat-label">Admins</div></div><div class="stat"><div class="stat-num" id="stInativos">0</div><div class="stat-label">Inativos</div></div></div><div class="card"><div class="card-hdr"><span class="card-icon">+</span><span class="card-title">Cadastrar Novo Usuario</span></div><div class="card-body"><div class="msg" id="msgCad"></div><div class="form-row"><div class="campo"><label>Nome *</label><input type="text" id="cNome" placeholder="Joao da Silva"></div><div class="campo"><label>E-mail *</label><input type="email" id="cEmail" placeholder="joao@email.com"></div></div><div class="form-row tri"><div class="campo"><label>Senha (opcional)</label>' + senhaInput('cSenha','','Branco = cria no 1o acesso',false).replace('name=""','') + '<span class="dica">Em branco: cria no 1o acesso.</span></div><div class="campo"><label>Papel</label><select id="cPapel"><option value="usuario">Usuario</option><option value="admin">Admin</option></select><span class="dica">Max 3 admins.</span></div><div class="campo"><label>Obs</label><input type="text" id="cObs" placeholder="Opcional"></div></div><button class="btn-add" id="btnCadastrar">Cadastrar</button></div></div><div class="card"><div class="card-hdr"><span class="card-icon">&#128274;</span><span class="card-title">Alterar Minha Senha</span></div><div class="card-body"><div class="msg" id="msgSenha"></div><div class="form-row tri"><div class="campo"><label>Atual *</label>' + senhaInput('sAtual','','','false') + '</div><div class="campo"><label>Nova *</label>' + senhaInput('sNova','','Min 6 chars',false) + '</div><div class="campo" style="justify-content:flex-end"><button class="btn-add" style="margin-top:0" id="btnAltSenha">Alterar</button></div></div></div></div><div class="card"><div class="card-hdr"><span class="card-icon">&#128101;</span><span class="card-title">Usuarios Cadastrados</span></div><div class="card-body" style="padding:0;overflow-x:auto"><table class="tabela"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th>Senha</th><th>Ultimo acesso</th><th>Acoes</th></tr></thead><tbody id="corpo"><tr><td colspan="7" class="vazio">Carregando...</td></tr></tbody></table></div></div></div><script>window._ADMIN_EMAIL="' + adminLogado.email + '";</script><script src="/painel/admin.js"></script>' + olhoScript + '</body></html>';
 }
 
 app.listen(PORT, '0.0.0.0', function() {
   console.log('');
-  console.log('  PAAC v3 rodando na porta ' + PORT);
+  console.log('  PAAC v4 rodando na porta ' + PORT);
   console.log('');
 });
