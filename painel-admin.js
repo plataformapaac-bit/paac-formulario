@@ -87,3 +87,5 @@ async function trocarSenha() {
 function toggleOlho(id) { var i = document.getElementById(id); i.type = i.type === 'password' ? 'text' : 'password'; }
 
 carregar();
+document.getElementById('btnCadastrar').addEventListener('click', cadastrar);
+document.getElementById('btnAltSenha').addEventListener('click', trocarSenha);
