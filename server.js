@@ -47,8 +47,18 @@ function salvarDados(d) {
     return;
   }
 
+  var projectId = process.env.RAILWAY_PROJECT_ID || '9642171c-150c-41b8-9dda-abac095c7deb';
   var mutation = JSON.stringify({
-    query: 'mutation { variableUpsert(input: { projectId: "", serviceId: "' + serviceId + '", environmentId: "' + environmentId + '", name: "USUARIOS_JSON", value: ' + JSON.stringify(json) + ' }) }'
+    query: 'mutation VariableUpsert($input: VariableUpsertInput!) { variableUpsert(input: $input) }',
+    variables: {
+      input: {
+        projectId: projectId,
+        serviceId: serviceId,
+        environmentId: environmentId,
+        name: 'USUARIOS_JSON',
+        value: json
+      }
+    }
   });
 
   var options = {
