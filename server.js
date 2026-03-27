@@ -315,6 +315,75 @@ app.delete('/api/projetos/:id', exigirLogin, async function(req, res) {
   }
 });
 
+// ═══ GET /api/nbr-status — verifica status do processamento NBR de um projeto ═══
+// Consultado pelo frontend via polling a cada 10 segundos após disparar o processamento
+app.get('/api/nbr-status', exigirLogin, async function(req, res) {
+  if (!supabase) return res.status(503).json({ erro: 'Banco de dados nao configurado.' });
+  var projeto_id = req.query.projeto_id;
+  if (!projeto_id) return res.status(400).json({ erro: 'projeto_id obrigatorio.' });
+  try {
+    var { data, error } = await supabase
+      .from('nbr_resultados')
+      .select('status, resultados_qi_qiv, valor_total_obra, processado_em, erro_mensagem')
+      .eq('projeto_id', projeto_id)
+      .eq('usuario_email', req.usuarioEmail) // segurança: só dono acessa
+      .order('processado_em', { ascending: false })
+      .limit(1)
+      .single();
+    if (error) {
+      // Registro não encontrado = ainda não foi processado
+      if (error.code === 'PGRST116') return res.json({ status: 'pendente' });
+      throw error;
+    }
+    res.json({
+      status: data.status,
+      resultados: data.resultados_qi_qiv || null,
+      valor_total_obra: data.valor_total_obra || null,
+      processado_em: data.processado_em || null,
+      erro_mensagem: data.erro_mensagem || null,
+    });
+  } catch (e) {
+    console.error('Erro ao verificar status NBR:', e.message);
+    res.status(500).json({ erro: 'Erro ao verificar status.' });
+  }
+});
+
+// ═══ POST /api/nbr-resultado — recebe resultado do n8n e salva no Supabase ═══
+// Chamado pelo n8n ao concluir o processamento da Primeira Parte
+app.post('/api/nbr-resultado', async function(req, res) {
+  // Verificar token de segurança
+  var token = req.headers['x-paac-token'];
+  if (token !== (process.env.WEBHOOK_TOKEN || 'paac-token-e0-2026')) {
+    return res.status(401).json({ erro: 'Token invalido.' });
+  }
+  if (!supabase) return res.status(503).json({ erro: 'Banco de dados nao configurado.' });
+  var { projeto_id, usuario_email, status, resultados_qi_qiv, valor_total_obra, hash_dados_entrada, erro_mensagem } = req.body;
+  if (!projeto_id || !usuario_email) return res.status(400).json({ erro: 'projeto_id e usuario_email obrigatorios.' });
+  var agora = new Date().toISOString();
+  try {
+    // Upsert: atualiza se já existe, cria se não existe
+    var { data, error } = await supabase
+      .from('nbr_resultados')
+      .upsert({
+        projeto_id,
+        usuario_email: usuario_email.toLowerCase(),
+        status: status || 'nbr_parte1_concluida',
+        resultados_qi_qiv: resultados_qi_qiv || null,
+        valor_total_obra: valor_total_obra || null,
+        hash_dados_entrada: hash_dados_entrada || null,
+        processado_em: agora,
+        erro_mensagem: erro_mensagem || null,
+      }, { onConflict: 'projeto_id' })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ ok: true, processado_em: agora });
+  } catch (e) {
+    console.error('Erro ao salvar resultado NBR:', e.message);
+    res.status(500).json({ erro: 'Erro ao salvar resultado.' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', function() {
   console.log('');
   console.log('  PAAC v3 rodando na porta ' + PORT);
