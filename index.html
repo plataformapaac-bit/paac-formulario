@@ -6100,7 +6100,7 @@ function exibirResultadosNBR(res) {
         '<td style="text-align:right">' + (u.area_uc_real ? fNum(u.area_uc_real, 4) : '—') + '</td>' +
         '<td style="text-align:right;font-weight:600">' + (u.area_real_total ? fNum(u.area_real_total, 4) : '—') + '</td>' +
         '<td style="text-align:right">' + (u.area_equiv_total ? fNum(u.area_equiv_total, 4) : '—') + '</td>' +
-        '<td style="text-align:right">' + (u.coef_proporcionalidade ? u.coef_proporcionalidade.toFixed(10) : '—') + '</td>' +
+        '<td style="text-align:right">' + (u.coef_proporcionalidade ? u.coef_proporcionalidade.toFixed(5) : '—') + '</td>' +
         '<td style="text-align:right">' + (u.custo_construcao ? 'R$ ' + u.custo_construcao.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—') + '</td>' +
       '</tr>';
     }).join('');
