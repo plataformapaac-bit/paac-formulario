@@ -3365,24 +3365,21 @@ function mArea2(el) {
   const n=parseInt(v)/100;
   el.value=n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-function mArea3(el) {
-  // Formata durante digitação: mantém o que o usuário está digitando
-  let v=el.value.replace(/[^\d,]/g,'');
-  el.value=v;
+// ═══════════════════════════════════════════════════════════════════
+// PATCH 3 — Corrigir mArea3 / fixArea3 (ponto de milhar)
+// ═══════════════════════════════════════════════════════════════════
+  function mArea3(el) {
+  let v=el.value.replace(/[^\d]/g,'');
+  if(!v){el.value='';return;}
+  const n=parseInt(v)/1000;
+  el.value=n.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3});
 }
 function fixArea3(el) {
-  // Chamado no onblur: garante exatamente 3 casas decimais
   if(!el.value.trim()){el.value='';return;}
-  // Remover tudo que não seja dígito ou vírgula
-  let v=el.value.replace(/[^\d,]/g,'');
+  let v=el.value.replace(/[^\d]/g,'');
   if(!v){el.value='';return;}
-  // Separar parte inteira e decimal
-  let partes=v.split(',');
-  let inteira=partes[0].replace(/^0+/,'')||'0';
-  let decimal=(partes[1]||'').substring(0,3);
-  // Completar decimais com zeros se necessário
-  while(decimal.length<3) decimal+='0';
-  el.value=inteira+','+decimal;
+  const n=parseInt(v)/1000;
+  el.value=n.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3});
 }
 function fixArea2(el) {
   // Chamado no onblur: garante exatamente 2 casas decimais
