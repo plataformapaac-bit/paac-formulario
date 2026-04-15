@@ -405,6 +405,42 @@ body{font-family:'DM Sans',sans-serif;background:var(--cinza-fundo);color:var(--
 .btn-desc-cancel{background:transparent;border:1.5px solid var(--cinza-borda);color:var(--cinza-texto);border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;}
 .textarea-expand-hint{font-size:.67rem;color:var(--azul-claro);margin-top:4px;display:block;cursor:pointer;}
 .textarea-expand-hint:hover{color:var(--azul);}
+
+/* ── PAVIMENTO TIPO — painel lateral Seção 6 ─────────────── */
+.sec6-layout{display:grid;grid-template-columns:1fr 272px;gap:16px;align-items:start;}
+@media(max-width:900px){.sec6-layout{grid-template-columns:1fr;}}
+.pavtipo-painel{background:white;border:1.5px solid var(--cinza-borda);border-radius:var(--radius);padding:14px;position:sticky;top:80px;}
+.pavtipo-titulo{font-size:.69rem;font-weight:700;color:var(--azul);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.pavtipo-titulo::after{content:'';flex:1;height:1px;background:var(--cinza-borda);}
+.pavtipo-contador{background:var(--cinza-fundo);border-radius:7px;padding:6px 10px;font-size:.73rem;color:var(--cinza-texto);margin-bottom:9px;text-align:center;}
+.pavtipo-contador strong{color:var(--azul-claro);}
+.pavtipo-btn-criar{width:100%;background:var(--azul-medio);color:white;border:none;border-radius:var(--radius);padding:8px;font-family:'DM Sans',sans-serif;font-size:.79rem;font-weight:600;cursor:pointer;margin-bottom:10px;opacity:.4;transition:all .2s;}
+.pavtipo-btn-criar.ativo{opacity:1;box-shadow:0 3px 10px rgba(42,82,152,.3);}
+.pavtipo-btn-criar.ativo:hover{opacity:.9;}
+.pavtipo-lista{display:flex;flex-direction:column;gap:8px;}
+.pavtipo-item{border:1.5px solid var(--cinza-borda);border-radius:var(--radius);padding:9px 11px;background:var(--cinza-fundo);}
+.pavtipo-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.pavtipo-item-nome{font-size:.79rem;font-weight:700;color:var(--azul);}
+.pavtipo-item-unids{font-size:.69rem;color:var(--cinza-texto);margin-bottom:7px;line-height:1.5;}
+.pavtipo-dup-row{display:flex;align-items:center;gap:5px;}
+.pavtipo-dup-row label{font-size:.7rem;color:var(--azul);white-space:nowrap;}
+.pavtipo-dup-row input[type=number]{width:48px;border:1.5px solid var(--cinza-borda);border-radius:5px;padding:4px 5px;font-size:.8rem;text-align:center;font-family:'DM Sans',sans-serif;}
+.pavtipo-btn-dup{background:linear-gradient(135deg,var(--ok),#0f4c2a);color:white;border:none;border-radius:5px;padding:5px 9px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.pavtipo-btn-del{background:none;border:none;cursor:pointer;color:var(--erro);font-size:.8rem;padding:1px 3px;}
+.pavtipo-vazio{font-size:.72rem;color:var(--cinza-texto);text-align:center;padding:10px 6px;font-style:italic;}
+.pavtipo-alerta{display:none;background:var(--aviso-bg);border:1px solid rgba(183,112,26,.35);border-radius:7px;padding:7px 10px;font-size:.72rem;color:var(--aviso);margin-top:8px;line-height:1.5;}
+.pavtipo-alerta.vis{display:block;}
+.pavtipo-tutorial{border:1.5px solid rgba(42,82,152,.18);border-radius:var(--radius);background:#ebf3fb;margin-bottom:12px;}
+.pavtipo-tutorial-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;cursor:pointer;user-select:none;}
+.pavtipo-tutorial-label{font-size:.77rem;font-weight:600;color:var(--azul-claro);display:flex;align-items:center;gap:7px;}
+.pavtipo-tutorial-seta{font-size:.7rem;color:var(--azul-claro);transition:transform .2s;}
+.pavtipo-tutorial-seta.aberto{transform:rotate(180deg);}
+.pavtipo-tutorial-body{display:none;padding:0 13px 13px;font-size:.76rem;color:var(--azul);line-height:1.7;}
+.pavtipo-tutorial-body.aberto{display:block;}
+.pavtipo-tutorial-body h4{font-size:.76rem;font-weight:700;color:var(--azul-claro);margin:9px 0 4px;}
+.pavtipo-tutorial-body ol,.pavtipo-tutorial-body ul{padding-left:15px;margin:0;}
+.pavtipo-tutorial-body li{margin-bottom:3px;}
+.pavtipo-tutorial-div{height:1px;background:rgba(42,82,152,.12);margin:9px 0;}
 </style>
 </head>
 <body>
@@ -1152,11 +1188,49 @@ body{font-family:'DM Sans',sans-serif;background:var(--cinza-fundo);color:var(--
       <div class="section-subtitle">Dados detalhados de cada unidade</div>
     </div></div>
     <div class="section-body">
-      <div class="aviso-box ok">✅ Designações pré-preenchidas da Seção 5 — Dados do Projeto. As vagas vinculadas são calculadas automaticamente da Seção 5.4.7.</div>
-      <div class="tabela-wrapper">
-        <table class="tabela-dinamica" id="tblUnids">
+      <!-- Banner tutorial (colapsado por padrão) -->
+      <div class="pavtipo-tutorial" id="pavtipo-banner">
+        <div class="pavtipo-tutorial-hdr" onclick="pavTipoToggleTutorial()">
+          <div class="pavtipo-tutorial-label">📖 Como usar: Duplicar Pavimento Tipo &amp; Duplicar Unidade Individual</div>
+          <span class="pavtipo-tutorial-seta" id="pavtipo-seta">▼</span>
+        </div>
+        <div class="pavtipo-tutorial-body" id="pavtipo-tutorial-body">
+          <h4>🏢 Duplicar Pavimento Tipo — andares repetidos</h4>
+          <ol>
+            <li>Digite as unidades do primeiro pavimento tipo normalmente na tabela.</li>
+            <li>Marque as unidades desse pavimento com os checkboxes (coluna ✓).</li>
+            <li>No painel direito, clique em <strong>"Criar Pavimento Tipo"</strong> e dê um nome ao grupo.</li>
+            <li>Informe quantas vezes esse pavimento se repete e clique em <strong>"Duplicar"</strong>.</li>
+            <li>A plataforma cria todas as unidades, renumerando sequencialmente (ex: 101→201→301...) com as mesmas áreas do modelo. Cada unidade pode ser editada individualmente depois.</li>
+            <li>As vagas e áreas acessórias da Seção 5 são vinculadas automaticamente pelo mecanismo já existente.</li>
+          </ol>
+          <div class="pavtipo-tutorial-div"></div>
+          <h4>📋 Duplicar Unidade Individual — unidades similares</h4>
+          <ol>
+            <li>Clique no botão <strong>📋</strong> à direita da linha que deseja copiar.</li>
+            <li>A cópia chega com os mesmos dados de área — edite a designação e o que for diferente.</li>
+          </ol>
+          <div class="pavtipo-tutorial-div"></div>
+          <h4>⚠️ Atenção</h4>
+          <ul>
+            <li>A numeração segue o padrão do empreendimento (ex: 3 dígitos → 101, 201, 301).</li>
+            <li>O total gerado não pode ultrapassar o número de unidades declarado na Seção 5.</li>
+            <li>Vagas sem unidade vinculada aparecem como alerta no painel lateral.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Layout 2 colunas: tabela principal + painel lateral -->
+      <div class="sec6-layout">
+
+        <!-- Coluna principal -->
+        <div>
+          <div class="aviso-box ok">✅ Designações pré-preenchidas da Seção 5 — Dados do Projeto. As vagas vinculadas são calculadas automaticamente da Seção 5.4.7.</div>
+          <div class="tabela-wrapper">
+            <table class="tabela-dinamica" id="tblUnids">
           <thead>
             <tr>
+              <th rowspan="3" style="width:24px;vertical-align:middle;text-align:center" title="Selecionar para Pavimento Tipo">✓</th>
               <th rowspan="3" style="width:26px;vertical-align:middle;text-align:center">#</th>
               <th rowspan="3" style="min-width:90px;vertical-align:middle">Designação da Unidade Autônoma</th>
               <th rowspan="3" style="min-width:62px;vertical-align:middle">Bloco</th>
@@ -1186,15 +1260,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--cinza-fundo);color:var(--
           <tbody id="bodyUnids"></tbody>
         </table>
       </div>
-      <button class="btn-add-linha" onclick="addUnid({},false)" style="margin-top:8px">+ Adicionar Unidade Autônoma</button>
-      <div class="aviso-box info" style="font-size:.73rem;margin-top:8px">
-        💾 <strong>Gravar:</strong> salva esta unidade como modelo reutilizável.
-        &nbsp;|&nbsp; 📂 <strong>Carregar:</strong> aplica modelo salvo a esta linha.
-        &nbsp;|&nbsp; 📋 <strong>Duplicar:</strong> copia esta linha.
-        &nbsp;|&nbsp; ✎ <strong>Editor expandido:</strong> abre a descrição em tela cheia para digitação confortável.
-      </div>
+          <button class="btn-add-linha" onclick="addUnid({},false)" style="margin-top:8px">+ Adicionar Unidade Autônoma</button>
+          <div class="aviso-box info" style="font-size:.73rem;margin-top:8px">
+            💾 <strong>Gravar:</strong> salva esta unidade como modelo reutilizável.
+            &nbsp;|&nbsp; 📂 <strong>Carregar:</strong> aplica modelo salvo a esta linha.
+            &nbsp;|&nbsp; 📋 <strong>Duplicar:</strong> copia esta linha individualmente.
+            &nbsp;|&nbsp; ✎ <strong>Editor expandido:</strong> abre a descrição em tela cheia.
+            &nbsp;|&nbsp; <strong>✓</strong> Seleciona para Pavimento Tipo.
+          </div>
+        </div><!-- /col-principal -->
 
+        <!-- Painel lateral: Pavimentos Tipo -->
+        <div class="pavtipo-painel">
+          <div class="pavtipo-titulo">Pavimentos Tipo</div>
+          <div class="pavtipo-contador"><strong id="pavtipo-num-sel">0</strong> unidade(s) selecionada(s)</div>
+          <button class="pavtipo-btn-criar" id="pavtipo-btn-criar" onclick="pavTipoCriarGrupo()">+ Criar Pavimento Tipo com selecionadas</button>
+          <div class="pavtipo-lista" id="pavtipo-lista">
+            <div class="pavtipo-vazio" id="pavtipo-vazio">Selecione unidades na tabela e crie um grupo aqui.</div>
+          </div>
+          <div class="pavtipo-alerta" id="pavtipo-alerta"></div>
+        </div><!-- /painel lateral -->
 
+      </div><!-- /sec6-layout -->
 
     </div>
   </div>
@@ -4285,7 +4372,8 @@ function addUnid(d, auto=false) {
   const oP='<option value="">Selecione...</option>'+nomesPavs.map(p=>`<option value="${p}">${p}</option>`).join('');
   const oB='<option value="">—</option>'+nomesBlocos.map(b=>`<option value="${b}">${b}</option>`).join('');
   const umBloco=(parseInt(gV('QTD_BLOCOS'))||0)===1;
-  tr.innerHTML=`<td class="num-col">${n}</td>
+  tr.innerHTML=`<td style="width:24px;text-align:center;vertical-align:middle;padding:4px 3px"><input type="checkbox" id="upavsel_${n}" class="pavtipo-sel-cb" onchange="pavTipoAtualizarSel()" style="accent-color:var(--azul-claro);cursor:pointer" title="Selecionar para Pavimento Tipo"></td>
+    <td class="num-col">${n}</td>
     <td class="fixo-col"><span id="unome-${n}">${d?.DESIG||('Unidade '+n)}</span></td>
     <td><select id="UB_${n}" ${umBloco?'disabled':''} onchange="as()" style="min-width:58px">${oB}</select></td>
     <td><select id="UP_${n}" onchange="as()" style="min-width:100px">${oP}</select></td>
@@ -6473,6 +6561,186 @@ function exibirResultadosNBR(res) {
 }
 
 // ── INIT ──────────────────────────────────────────────────
+// ── DUPLICAR PAVIMENTO TIPO — Seção 6 ──────────────────────────
+var _pavTipoGrupos = [];
+var _pavTipoProxId = 1;
+
+function pavTipoToggleTutorial() {
+  var body = document.getElementById('pavtipo-tutorial-body');
+  var seta = document.getElementById('pavtipo-seta');
+  if (!body) return;
+  var aberto = body.classList.toggle('aberto');
+  if (seta) seta.classList.toggle('aberto', aberto);
+}
+
+function pavTipoAtualizarSel() {
+  var cbs = document.querySelectorAll('.pavtipo-sel-cb:checked');
+  var num = cbs.length;
+  var elNum = document.getElementById('pavtipo-num-sel');
+  if (elNum) elNum.textContent = num;
+  var btn = document.getElementById('pavtipo-btn-criar');
+  if (btn) btn.classList.toggle('ativo', num >= 2);
+  pavTipoAtualizarAlerta();
+}
+
+function pavTipoCriarGrupo() {
+  var cbs = document.querySelectorAll('.pavtipo-sel-cb:checked');
+  if (cbs.length < 2) {
+    alert('Selecione ao menos 2 unidades para criar um Pavimento Tipo.\n\nUse os checkboxes (coluna ✓) na tabela de unidades.');
+    return;
+  }
+  var nome = prompt('Nome para este Pavimento Tipo:\n(Ex: Pavimento Tipo 1, Pav. Tipo A...)', 'Pavimento Tipo ' + _pavTipoProxId);
+  if (!nome || !nome.trim()) return;
+  nome = nome.trim();
+  var unids = [];
+  cbs.forEach(function(cb) {
+    var n = parseInt(cb.id.replace('upavsel_', ''));
+    var desigEl = document.getElementById('unome-' + n);
+    var desig = desigEl ? desigEl.textContent : ('Unidade ' + n);
+    unids.push({ n: n, desig: desig });
+  });
+  var grupo = { id: _pavTipoProxId++, nome: nome, unids: unids };
+  _pavTipoGrupos.push(grupo);
+  cbs.forEach(function(cb) { cb.checked = false; });
+  pavTipoAtualizarSel();
+  pavTipoRenderizarLista();
+  as();
+}
+
+function pavTipoRenderizarLista() {
+  var lista = document.getElementById('pavtipo-lista');
+  var vazio = document.getElementById('pavtipo-vazio');
+  if (!lista) return;
+  Array.from(lista.children).forEach(function(ch) {
+    if (ch.id !== 'pavtipo-vazio') ch.remove();
+  });
+  if (_pavTipoGrupos.length === 0) {
+    if (vazio) vazio.style.display = '';
+    return;
+  }
+  if (vazio) vazio.style.display = 'none';
+  _pavTipoGrupos.forEach(function(g) {
+    var div = document.createElement('div');
+    div.className = 'pavtipo-item';
+    div.id = 'pavtipo-item-' + g.id;
+    var unidsTexto = g.unids.map(function(u) { return u.desig; }).join(', ');
+    var inputId = 'pavtipo-rep-' + g.id;
+    div.innerHTML =
+      '<div class="pavtipo-item-header">' +
+        '<div class="pavtipo-item-nome">' + g.nome + ' <span style="font-size:.67rem;color:var(--cinza-texto);font-weight:400">(' + g.unids.length + ' un.)</span></div>' +
+        '<button class="pavtipo-btn-del" onclick="pavTipoDelGrupo(' + g.id + ')" title="Remover grupo">✕</button>' +
+      '</div>' +
+      '<div class="pavtipo-item-unids">' + unidsTexto + '</div>' +
+      '<div class="pavtipo-dup-row">' +
+        '<label for="' + inputId + '">Repetir por mais</label>' +
+        '<input type="number" id="' + inputId + '" min="1" max="50" value="1">' +
+        '<label>pav.</label>' +
+        '<button class="pavtipo-btn-dup" onclick="pavTipoDuplicar(' + g.id + ')">&#9658; Duplicar</button>' +
+      '</div>';
+    lista.appendChild(div);
+  });
+}
+
+function pavTipoDelGrupo(id) {
+  _pavTipoGrupos = _pavTipoGrupos.filter(function(g) { return g.id !== id; });
+  pavTipoRenderizarLista();
+  as();
+}
+
+function pavTipoDuplicar(grupoId) {
+  var grupo = _pavTipoGrupos.find(function(g) { return g.id === grupoId; });
+  if (!grupo) return;
+  var inputEl = document.getElementById('pavtipo-rep-' + grupoId);
+  var repeticoes = parseInt(inputEl ? inputEl.value : '1') || 1;
+  if (repeticoes < 1 || repeticoes > 50) {
+    alert('Informe um número de repetições entre 1 e 50.'); return;
+  }
+  var maxUnids = parseInt(gV('QTD_UNID')) || 0;
+  var unidsGeradas = grupo.unids.length * repeticoes;
+  var unidsExistentes = cntUnid;
+  if (maxUnids > 0 && (unidsExistentes + unidsGeradas) > maxUnids) {
+    alert(
+      '\u26a0\ufe0f Não é possível duplicar.\n\n' +
+      'Total declarado na Seção 5: ' + maxUnids + '\n' +
+      'Unidades já cadastradas: ' + unidsExistentes + '\n' +
+      'Unidades que seriam geradas: ' + unidsGeradas + '\n\n' +
+      'Reduza as repetições ou atualize o total na Seção 5.'
+    );
+    return;
+  }
+  for (var rep = 1; rep <= repeticoes; rep++) {
+    grupo.unids.forEach(function(uModelo) {
+      var novaDesig = pavTipoIncrementarDesig(uModelo.desig, rep);
+      addUnid({ DESIG: novaDesig }, false);
+      var novoN = cntUnid;
+      ['UAP_','UCNP25_','UCNPD26_','UB_','UP_','UT_'].forEach(function(prefix) {
+        var src = document.getElementById(prefix + uModelo.n);
+        var dst = document.getElementById(prefix + novoN);
+        if (src && dst) dst.value = src.value;
+      });
+      var txtSrc = document.getElementById('UTXT_' + uModelo.n);
+      var txtDst = document.getElementById('UTXT_' + novoN);
+      if (txtSrc && txtDst) txtDst.value = txtSrc.value;
+      calcTotUnid(novoN);
+    });
+  }
+  sincUnids();
+  atualizarVgsUni();
+  pavTipoAtualizarAlerta();
+  as();
+  alert('\u2705 ' + unidsGeradas + ' unidade(s) criada(s) com sucesso!\n\nRevise individualmente as que precisem de ajustes.');
+}
+
+function pavTipoIncrementarDesig(desig, rep) {
+  var match = desig.match(/(\d{2,4})/);
+  if (!match) return desig + '-' + (rep + 1);
+  var numStr = match[1];
+  var num = parseInt(numStr);
+  var len = numStr.length;
+  var novoNum;
+  if (len === 3) {
+    var andar = Math.floor(num / 100);
+    var pos = num % 100;
+    novoNum = String((andar + rep) * 100 + pos);
+    if (novoNum.length < 3) novoNum = novoNum.padStart(3, '0');
+  } else if (len === 4) {
+    var andar4 = Math.floor(num / 100);
+    var pos4 = num % 100;
+    novoNum = String((andar4 + rep) * 100 + pos4);
+  } else if (len === 2) {
+    novoNum = String(num + rep).padStart(2, '0');
+  } else {
+    novoNum = String(num + rep);
+  }
+  return desig.replace(numStr, novoNum);
+}
+
+function pavTipoAtualizarAlerta() {
+  var alertaEl = document.getElementById('pavtipo-alerta');
+  if (!alertaEl) return;
+  var vagasSoltas = 0;
+  for (var i = 1; i <= cntVaga; i++) {
+    if (!document.getElementById('vg-' + i)) continue;
+    if (!gV('VVU_' + i)) vagasSoltas++;
+  }
+  var acessSoltas = 0;
+  for (var j = 1; j <= cntAreaAcess; j++) {
+    if (!document.getElementById('aa-' + j)) continue;
+    if (!gV('AAU_' + j)) acessSoltas++;
+  }
+  var total = vagasSoltas + acessSoltas;
+  if (total > 0) {
+    var partes = [];
+    if (vagasSoltas > 0) partes.push(vagasSoltas + ' vaga(s)');
+    if (acessSoltas > 0) partes.push(acessSoltas + ' área(s) acessória(s)');
+    alertaEl.innerHTML = '\u26a0\ufe0f <strong>' + partes.join(' e ') + '</strong> da Seção 5 ainda sem unidade vinculada.';
+    alertaEl.classList.add('vis');
+  } else {
+    alertaEl.classList.remove('vis');
+  }
+}
+// ── FIM DUPLICAR PAVIMENTO TIPO ──────────────────────────────────
+
 window.addEventListener('load', function() {
   // Buscar nome do usuário logado via sessão do servidor
   fetch('/api/me')
