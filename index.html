@@ -5809,6 +5809,11 @@ function coletarDados() {
     d.acabamentos.comuns.push({pavimento:pav,nome:nome,piso_tipo:gV('QVIII_'+idC+'_PTIPO')||'',piso_esp:gV('QVIII_'+idC+'_PESP')||'',paredes_tipo:gV('QVIII_'+idC+'_WTIPO')||'',paredes_esp:gV('QVIII_'+idC+'_WESP')||'',tetos_tipo:gV('QVIII_'+idC+'_TTIPO')||'',tetos_esp:gV('QVIII_'+idC+'_TESP')||'',observacoes:gV('QVIII_'+idC+'_OUT')||''});
   });
 
+// ── BLOCO SETORES (UC NP setorial — uso misto) ───────────────────
+  d.setores_uc_np_sep = gE('SETORES_UC_NP_SEP') ? gE('SETORES_UC_NP_SEP').checked : false;
+  d.fator_equiv_desc  = gV('FATOR_EQUIV_DESC') || '0.65';
+  d.setores_np        = (typeof coletarSetores === 'function') ? coletarSetores() : [];
+
   return d;
 }
 function restaurarDados(d) {
