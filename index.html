@@ -6905,53 +6905,118 @@ function restaurarDados(d) {
       restaurarOrientacao(d.orientacao_grupos);
     }
   }, 600);
-
-  // ── 13a. Q VI — Restaurar Equipamentos ─────────────────────────────────
+// ── 13a. Q VI — Restaurar Equipamentos (catálogo + livres) ─────────
   setTimeout(function() {
-    if (!d.equipamentos||!d.equipamentos.lista) return;
-    d.equipamentos.lista.forEach(function(item) {
-      var ib='QVI_'+item.item, elInc=gE(ib+'_INC');
-      if (elInc){elInc.checked=true; if(typeof toggleQVI==='function')toggleQVI(item.item.replace(/_/g,'-'));}
-      var t=item.tipo||'', det=item.detalhes||'';
-      if (t.indexOf('A especificar — ')===0){det=t.slice('A especificar — '.length);t='A especificar';}
-      var elT=gE(ib+'_TIPO'),elA=gE(ib+'_ACAB'),elD=gE(ib+'_DET');
-      if(elT)elT.value=t; if(elA)elA.value=item.acabamento||''; if(elD)elD.value=det;
-    });
+    if (!d.equipamentos) return;
+    // Catálogo fixo
+    if (d.equipamentos.lista) {
+      d.equipamentos.lista.forEach(function(item) {
+        var ib='QVI_'+item.item, elInc=gE(ib+'_INC');
+        if (elInc){elInc.checked=true; if(typeof toggleQVI==='function')toggleQVI(item.item.replace(/_/g,'-'));}
+        var t=item.tipo||'', det=item.detalhes||'';
+        if (t.indexOf('A especificar — ')===0){det=t.slice('A especificar — '.length);t='A especificar';}
+        var elT=gE(ib+'_TIPO'),elA=gE(ib+'_ACAB'),elD=gE(ib+'_DET');
+        if(elT)elT.value=t; if(elA)elA.value=item.acabamento||''; if(elD)elD.value=det;
+      });
+    }
+    // Equipamentos personalizados ("+ Adicionar")
+    if (d.equipamentos.livres && d.equipamentos.livres.length) {
+      d.equipamentos.livres.forEach(function(item){
+        if (typeof addQVILivre === 'function') addQVILivre();
+        var n = cntQVILivre;
+        var ib = 'QVI_livre'+n;
+        if(gE(ib+'_NOME')) gE(ib+'_NOME').value = item.nome || '';
+        if(gE(ib+'_TIPO')) gE(ib+'_TIPO').value = item.tipo || '';
+        if(gE(ib+'_ACAB')) gE(ib+'_ACAB').value = item.acabamento || '';
+        if(gE(ib+'_DET'))  gE(ib+'_DET').value  = item.detalhes || '';
+      });
+    }
   }, 700);
-  // ── 13b. Q VII — Restaurar Acabamentos Privativos ───────────────────
+  // ── 13b. Q VII — Restaurar Acabamentos Privativos (catálogo + livres) ─
   setTimeout(function() {
     if (!d.acabamentos||!d.acabamentos.privativos) return;
     var QVII=['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14','p15','p16','p17'];
+    function sv(id,v){var el=gE(id);if(el)el.value=v||'';}
     d.acabamentos.privativos.forEach(function(amb) {
-      var pid=null;
-      QVII.forEach(function(p){var trEl=gE('qvii-'+p);if(!trEl)return;var fx=trEl.querySelector('.fixo-col');if(fx&&(fx.textContent||fx.innerText||'').trim()===amb.nome)pid=p;});
-      if(!pid)return;
-      var elInc=gE('QVII_'+pid+'_INC'); if(elInc){elInc.checked=true;if(typeof toggleQVII==='function')toggleQVII(pid);}
-      function sv(id,v){var el=gE(id);if(el)el.value=v||'';}
-      sv('QVII_'+pid+'_PTIPO',amb.piso_tipo);sv('QVII_'+pid+'_PESP',amb.piso_esp);
-      sv('QVII_'+pid+'_WTIPO',amb.paredes_tipo);sv('QVII_'+pid+'_WESP',amb.paredes_esp);
-      sv('QVII_'+pid+'_TTIPO',amb.tetos_tipo);sv('QVII_'+pid+'_TESP',amb.tetos_esp);
-      sv('QVII_'+pid+'_OUT',amb.observacoes);
-    });
-  }, 700);
-  // ── 13c. Q VIII — Restaurar Acabamentos Comuns ──────────────────────
-  setTimeout(function() {
-    if (!d.acabamentos||!d.acabamentos.comuns) return;
-    d.acabamentos.comuns.forEach(function(amb) {
-      document.querySelectorAll('[id^="qviii-amb-"]').forEach(function(trEl) {
-        var fx=trEl.querySelector('.fixo-col');
-        if (!fx||(fx.textContent||fx.innerText||'').trim()!==amb.nome) return;
-        var idC=trEl.id.replace('qviii-amb-','').replace(/-/g,'_');
-        if (idC.split('_')[0]!==amb.pavimento) return;
-        var elInc=gE('QVIII_'+idC+'_INC'); if(elInc){elInc.checked=true;if(typeof toggleQVIIIAmb==='function')toggleQVIIIAmb(idC);}
-        function sv(id,v){var el=gE(id);if(el)el.value=v||'';}
-        sv('QVIII_'+idC+'_PTIPO',amb.piso_tipo);sv('QVIII_'+idC+'_PESP',amb.piso_esp);
-        sv('QVIII_'+idC+'_WTIPO',amb.paredes_tipo);sv('QVIII_'+idC+'_WESP',amb.paredes_esp);
-        sv('QVIII_'+idC+'_TTIPO',amb.tetos_tipo);sv('QVIII_'+idC+'_TESP',amb.tetos_esp);
-        sv('QVIII_'+idC+'_OUT',amb.observacoes);
-      });
+      if (amb.livre) {
+        // Linha personalizada — criar nova
+        if (typeof addQVIILivre === 'function') addQVIILivre();
+        var pid = 'livre'+cntQVIILivre;
+        if(gE('QVII_'+pid+'_NOME')) gE('QVII_'+pid+'_NOME').value = amb.nome || '';
+        sv('QVII_'+pid+'_PTIPO',amb.piso_tipo); sv('QVII_'+pid+'_PESP',amb.piso_esp);
+        sv('QVII_'+pid+'_WTIPO',amb.paredes_tipo); sv('QVII_'+pid+'_WESP',amb.paredes_esp);
+        sv('QVII_'+pid+'_TTIPO',amb.tetos_tipo); sv('QVII_'+pid+'_TESP',amb.tetos_esp);
+        sv('QVII_'+pid+'_OUT',amb.observacoes);
+      } else {
+        // Linha do catálogo — localizar por nome
+        var pid=null;
+        QVII.forEach(function(p){var trEl=gE('qvii-'+p);if(!trEl)return;var fx=trEl.querySelector('.fixo-col');if(fx&&(fx.textContent||fx.innerText||'').trim()===amb.nome)pid=p;});
+        if(!pid)return;
+        var elInc=gE('QVII_'+pid+'_INC'); if(elInc){elInc.checked=true;if(typeof toggleQVII==='function')toggleQVII(pid);}
+        sv('QVII_'+pid+'_PTIPO',amb.piso_tipo); sv('QVII_'+pid+'_PESP',amb.piso_esp);
+        sv('QVII_'+pid+'_WTIPO',amb.paredes_tipo); sv('QVII_'+pid+'_WESP',amb.paredes_esp);
+        sv('QVII_'+pid+'_TTIPO',amb.tetos_tipo); sv('QVII_'+pid+'_TESP',amb.tetos_esp);
+        sv('QVII_'+pid+'_OUT',amb.observacoes);
+      }
     });
   }, 800);
+  // ── 13c. Q VIII — Restaurar Acabamentos Comuns (catálogo + livres) ───
+  setTimeout(function() {
+    if (!d.acabamentos||!d.acabamentos.comuns) return;
+    function sv(id,v){var el=gE(id);if(el)el.value=v||'';}
+    d.acabamentos.comuns.forEach(function(amb) {
+      if (amb.livre) {
+        // Ambiente personalizado — criar nova linha no pavimento correto
+        if (typeof addQVIIIAmbLivre === 'function') addQVIIIAmbLivre(amb.pavimento);
+        var aid = amb.pavimento + '_livre' + cntQVIIIAmbLivre[amb.pavimento];
+        if(gE('QVIII_'+aid+'_NOME')) gE('QVIII_'+aid+'_NOME').value = amb.nome || '';
+        sv('QVIII_'+aid+'_PTIPO',amb.piso_tipo); sv('QVIII_'+aid+'_PESP',amb.piso_esp);
+        sv('QVIII_'+aid+'_WTIPO',amb.paredes_tipo); sv('QVIII_'+aid+'_WESP',amb.paredes_esp);
+        sv('QVIII_'+aid+'_TTIPO',amb.tetos_tipo); sv('QVIII_'+aid+'_TESP',amb.tetos_esp);
+        sv('QVIII_'+aid+'_OUT',amb.observacoes);
+      } else {
+        // Ambiente do catálogo — localizar por nome+pavimento
+        document.querySelectorAll('[id^="qviii-amb-"]').forEach(function(trEl) {
+          var fx=trEl.querySelector('.fixo-col');
+          if (!fx||(fx.textContent||fx.innerText||'').trim()!==amb.nome) return;
+          var idC=trEl.id.replace('qviii-amb-','').replace(/-/g,'_');
+          if (idC.split('_')[0]!==amb.pavimento) return;
+          var elInc=gE('QVIII_'+idC+'_INC'); if(elInc){elInc.checked=true;if(typeof toggleQVIIIAmb==='function')toggleQVIIIAmb(idC);}
+          sv('QVIII_'+idC+'_PTIPO',amb.piso_tipo); sv('QVIII_'+idC+'_PESP',amb.piso_esp);
+          sv('QVIII_'+idC+'_WTIPO',amb.paredes_tipo); sv('QVIII_'+idC+'_WESP',amb.paredes_esp);
+          sv('QVIII_'+idC+'_TTIPO',amb.tetos_tipo); sv('QVIII_'+idC+'_TESP',amb.tetos_esp);
+          sv('QVIII_'+idC+'_OUT',amb.observacoes);
+        });
+      }
+    });
+  }, 900);
+  // ── 13e. Linhas dinâmicas 6.3.8 e 6.5.5 ─────────────────────────────
+  setTimeout(function() {
+    var bodyEq = document.getElementById('bodyEqOutros');
+    var bodyOc = document.getElementById('bodyOcOutros');
+    // Limpar linhas pré-criadas pelo initOutros antes de restaurar
+    if (bodyEq) { bodyEq.innerHTML = ''; cntEqOutros = 0; }
+    if (bodyOc) { bodyOc.innerHTML = ''; cntOcOutros = 0; }
+    // Restaurar 6.3.8 — varre todas as chaves do projeto
+    var pares638 = [];
+    Object.keys(d).forEach(function(k){
+      var m = k.match(/^CUSTO_EQ_OUTROS_(\d+)$/);
+      if (m) pares638.push({n: parseInt(m[1]), valor: d[k], descricao: d['CUSTO_EQ_OUTROS_DESC_'+m[1]] || ''});
+    });
+    pares638.sort(function(a,b){return a.n-b.n;});
+    pares638.forEach(function(p){ addEqOutros({descricao: p.descricao, valor: p.valor}); });
+    if (pares638.length === 0) addEqOutros();
+    // Restaurar 6.5.5
+    var pares655 = [];
+    Object.keys(d).forEach(function(k){
+      var m = k.match(/^CUSTO_OC_OUTROS_(\d+)$/);
+      if (m) pares655.push({n: parseInt(m[1]), valor: d[k], descricao: d['CUSTO_OC_OUTROS_DESC_'+m[1]] || ''});
+    });
+    pares655.sort(function(a,b){return a.n-b.n;});
+    pares655.forEach(function(p){ addOcOutros({descricao: p.descricao, valor: p.valor}); });
+    if (pares655.length === 0) addOcOutros();
+    if (typeof calcCustoGlobal === 'function') calcCustoGlobal();
+  }, 950);
   // ── 13d. SETORES USO MISTO (seção 5a) ─────────────────────────────────
   setTimeout(function() {
     // Restaurar tipo de edificação primeiro (já feito no bloco 2),
