@@ -6401,6 +6401,13 @@ function coletarDados() {
     'qto1','qto2','qto3','sal1','sal2','sal3','ban1','ban2','ban3','emp1','emp2','emp3'];
   const d={tipoInstrumento:tipoInstr};
   campos.forEach(id=>{d[id]=gV(id);});
+  // Coletar linhas dinâmicas 6.3.8 (Outros Equipamentos) e 6.5.5 (Outras Obras)
+  document.querySelectorAll('input[id^="CUSTO_EQ_OUTROS_"]').forEach(function(el){
+    if (el.id) d[el.id] = el.value || '';
+  });
+  document.querySelectorAll('input[id^="CUSTO_OC_OUTROS_"]').forEach(function(el){
+    if (el.id) d[el.id] = el.value || '';
+  });
   d.QUARTOS=[gV('qto1'),gV('qto2'),gV('qto3')].filter(function(x){return x;}).join(' e ')||null;
   d.QTO_EMPREGADOS=[gV('emp1'),gV('emp2'),gV('emp3')].filter(function(x){return x;}).join(' e ')||null;
   d.SALAS=[gV('sal1'),gV('sal2'),gV('sal3')].filter(x=>x).join(' e ')||null;
