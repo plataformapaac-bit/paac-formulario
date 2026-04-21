@@ -6510,24 +6510,52 @@ function coletarDados() {
     if (t==='A especificar'&&det) { t=t+' — '+det; det=''; }
     d.equipamentos.lista.push({item:chave,aba:QVI_MAPA[chave].aba,linha:QVI_MAPA[chave].linha,tipo:t,acabamento:a,detalhes:det});
   });
+  // ── Q VI — Equipamentos personalizados (botão "+") ─────────────────
   d.equipamentos.livres=[];
+  document.querySelectorAll('[id^="qvi-livre"]').forEach(function(trEl){
+    var idS = trEl.id.replace('qvi-livre','');
+    var elInc = gE('QVI_livre'+idS+'_INC');
+    if (!elInc || !elInc.checked) return;
+    d.equipamentos.livres.push({
+      ord: idS,
+      nome:       gV('QVI_livre'+idS+'_NOME') || '',
+      tipo:       gV('QVI_livre'+idS+'_TIPO') || '',
+      acabamento: gV('QVI_livre'+idS+'_ACAB') || '',
+      detalhes:   gV('QVI_livre'+idS+'_DET')  || ''
+    });
+  });
   // ── Q VII — Acabamentos Privativos ───────────────────────────────────
   if (!d.acabamentos) d.acabamentos={privativos:[],comuns:[]};
+  // 1) Ambientes do catálogo (p0..p17)
   ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14','p15','p16','p17'].forEach(function(pid) {
     var elInc=gE('QVII_'+pid+'_INC'); if(!elInc||!elInc.checked) return;
     var trEl=gE('qvii-'+pid), nome='';
     if (trEl){var fx=trEl.querySelector('.fixo-col');if(fx)nome=(fx.textContent||fx.innerText||'').trim();}
     if (!nome) nome=pid;
-    d.acabamentos.privativos.push({nome:nome,piso_tipo:gV('QVII_'+pid+'_PTIPO')||'',piso_esp:gV('QVII_'+pid+'_PESP')||'',paredes_tipo:gV('QVII_'+pid+'_WTIPO')||'',paredes_esp:gV('QVII_'+pid+'_WESP')||'',tetos_tipo:gV('QVII_'+pid+'_TTIPO')||'',tetos_esp:gV('QVII_'+pid+'_TESP')||'',observacoes:gV('QVII_'+pid+'_OUT')||''});
+    d.acabamentos.privativos.push({nome:nome,livre:false,piso_tipo:gV('QVII_'+pid+'_PTIPO')||'',piso_esp:gV('QVII_'+pid+'_PESP')||'',paredes_tipo:gV('QVII_'+pid+'_WTIPO')||'',paredes_esp:gV('QVII_'+pid+'_WESP')||'',tetos_tipo:gV('QVII_'+pid+'_TTIPO')||'',tetos_esp:gV('QVII_'+pid+'_TESP')||'',observacoes:gV('QVII_'+pid+'_OUT')||''});
+  });
+  // 2) Ambientes personalizados (linhas livres) — id = "livre1", "livre2"...
+  document.querySelectorAll('[id^="qvii-livre"]').forEach(function(trEl){
+    var idS = trEl.id.replace('qvii-','');
+    var elInc=gE('QVII_'+idS+'_INC'); if(!elInc||!elInc.checked) return;
+    var nome = gV('QVII_'+idS+'_NOME') || '';
+    if (!nome) return;
+    d.acabamentos.privativos.push({nome:nome,livre:true,piso_tipo:gV('QVII_'+idS+'_PTIPO')||'',piso_esp:gV('QVII_'+idS+'_PESP')||'',paredes_tipo:gV('QVII_'+idS+'_WTIPO')||'',paredes_esp:gV('QVII_'+idS+'_WESP')||'',tetos_tipo:gV('QVII_'+idS+'_TTIPO')||'',tetos_esp:gV('QVII_'+idS+'_TESP')||'',observacoes:gV('QVII_'+idS+'_OUT')||''});
   });
   // ── Q VIII — Acabamentos Comuns ──────────────────────────────────────
   document.querySelectorAll('[id^="qviii-amb-"]').forEach(function(trEl) {
     var idS=trEl.id.replace('qviii-amb-',''),idC=idS.replace(/-/g,'_');
     var elInc=gE('QVIII_'+idC+'_INC'); if(!elInc||!elInc.checked) return;
     var pav=idC.split('_')[0]||'terreo',nome='';
-    var fx=trEl.querySelector('.fixo-col'); if(fx)nome=(fx.textContent||fx.innerText||'').trim();
+    var fx=trEl.querySelector('.fixo-col');
+    if (fx) {
+      // Linha livre tem <input> dentro de .fixo-col
+      var inpNome = fx.querySelector('input[type=text]');
+      nome = inpNome ? (inpNome.value || '').trim() : (fx.textContent||fx.innerText||'').trim();
+    }
     if(!nome)nome=idS;
-    d.acabamentos.comuns.push({pavimento:pav,nome:nome,piso_tipo:gV('QVIII_'+idC+'_PTIPO')||'',piso_esp:gV('QVIII_'+idC+'_PESP')||'',paredes_tipo:gV('QVIII_'+idC+'_WTIPO')||'',paredes_esp:gV('QVIII_'+idC+'_WESP')||'',tetos_tipo:gV('QVIII_'+idC+'_TTIPO')||'',tetos_esp:gV('QVIII_'+idC+'_TESP')||'',observacoes:gV('QVIII_'+idC+'_OUT')||''});
+    var ehLivre = idC.indexOf('_livre') >= 0;
+    d.acabamentos.comuns.push({pavimento:pav,nome:nome,livre:ehLivre,id_livre:ehLivre?idC:null,piso_tipo:gV('QVIII_'+idC+'_PTIPO')||'',piso_esp:gV('QVIII_'+idC+'_PESP')||'',paredes_tipo:gV('QVIII_'+idC+'_WTIPO')||'',paredes_esp:gV('QVIII_'+idC+'_WESP')||'',tetos_tipo:gV('QVIII_'+idC+'_TTIPO')||'',tetos_esp:gV('QVIII_'+idC+'_TESP')||'',observacoes:gV('QVIII_'+idC+'_OUT')||''});
   });
 
 // ── BLOCO SETORES (UC NP setorial — uso misto) ───────────────────
