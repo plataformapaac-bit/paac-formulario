@@ -5170,7 +5170,7 @@ function verificarUCDNP(n) {
   as();
 }
 // ── LINHAS DINÂMICAS — 6.3.8 e 6.5.5 ───────────────────
-function addEqOutros() {
+function addEqOutros(prefill) {
   cntEqOutros++;
   var n = cntEqOutros;
   var tbody = document.getElementById('bodyEqOutros');
@@ -5183,13 +5183,17 @@ function addEqOutros() {
   tr.innerHTML =
     '<td><input type="text" id="' + idEqDesc + '" placeholder="Descrição" oninput="as()" style="width:100%"></td>' +
     '<td style="width:30px;text-align:center"><span style="font-size:.82rem;font-weight:600;color:var(--azul)">R$</span></td>' +
-    '<td><input type="text" id="' + idEq + '" placeholder="0,00" value="0,00" style="width:130px" oninput="calcCustoGlobal();as()"></td>' +
+    '<td><input type="text" id="' + idEq + '" placeholder="0,00" value="0,00" style="width:130px" oninput="mNum(this);calcCustoGlobal();as()" onblur="fixNum(this)"></td>' +
     '<td><button class="btn-del" title="Excluir linha" onclick="document.getElementById(' + "'" + idRowEq + "'" + ').remove();calcCustoGlobal();as()">🗑</button></td>';
   tbody.appendChild(tr);
+  if (prefill) {
+    if (prefill.descricao) document.getElementById(idEqDesc).value = prefill.descricao;
+    if (prefill.valor)     document.getElementById(idEq).value     = prefill.valor;
+  }
   as();
 }
 
-function addOcOutros() {
+function addOcOutros(prefill) {
   cntOcOutros++;
   var n = cntOcOutros;
   var tbody = document.getElementById('bodyOcOutros');
@@ -5202,12 +5206,15 @@ function addOcOutros() {
   tr.innerHTML =
     '<td><input type="text" id="' + idOcDesc + '" placeholder="Descrição" oninput="as()" style="width:100%"></td>' +
     '<td style="width:30px;text-align:center"><span style="font-size:.82rem;font-weight:600;color:var(--azul)">R$</span></td>' +
-    '<td><input type="text" id="' + idOc + '" placeholder="0,00" value="0,00" style="width:130px" oninput="calcCustoGlobal();as()"></td>' +
+    '<td><input type="text" id="' + idOc + '" placeholder="0,00" value="0,00" style="width:130px" oninput="mNum(this);calcCustoGlobal();as()" onblur="fixNum(this)"></td>' +
     '<td><button class="btn-del" title="Excluir linha" onclick="document.getElementById(' + "'" + idRowOc + "'" + ').remove();calcCustoGlobal();as()">🗑</button></td>';
   tbody.appendChild(tr);
+  if (prefill) {
+    if (prefill.descricao) document.getElementById(idOcDesc).value = prefill.descricao;
+    if (prefill.valor)     document.getElementById(idOc).value     = prefill.valor;
+  }
   as();
 }
-
 function delLinhaOutros(rowId, prefix) {
   var tr = document.getElementById(rowId);
   if (tr) { tr.remove(); calcCustoGlobal(); as(); }
