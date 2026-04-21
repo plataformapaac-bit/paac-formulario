@@ -6719,15 +6719,29 @@ function restaurarDados(d) {
         var n = cntVaga;
         setTimeout(function(nn, v) {
           if(gE('VT_'+nn))  gE('VT_'+nn).value  = v.tipo      || '';
-          if(gE('VVU_'+nn)) gE('VVU_'+nn).value  = v.unidade   || '';
+          // ── VVU: garantir que a opção da unidade existe no dropdown ──
+          // (correção corrida de restauração — últimas unidades / salas comerciais)
+          var selVVU = gE('VVU_'+nn);
+          if (selVVU) {
+            var alvo = v.unidade || '';
+            if (alvo) {
+              var existe = Array.prototype.some.call(selVVU.options, function(o){return o.value === alvo;});
+              if (!existe) {
+                var opt = document.createElement('option');
+                opt.value = alvo; opt.textContent = alvo;
+                selVVU.appendChild(opt);
+              }
+            }
+            selVVU.value = alvo;
+          }
           if(gE('VPV_'+nn)) gE('VPV_'+nn).value  = v.pavimento || '';
           if(gE('VCB_'+nn)) gE('VCB_'+nn).value  = v.cobertura || 'Coberta';
           if(gE('VCF_'+nn)) gE('VCF_'+nn).checked = v.confinada || false;
           if(gE('VPC_'+nn)) gE('VPC_'+nn).checked = v.pcd       || false;
           if(gE('VID_'+nn)) gE('VID_'+nn).checked = v.idoso     || false;
-        }, 50, n, vag);
+        }, 250, n, vag);
       });
-      setTimeout(atualizarVgsUni, 400);
+      setTimeout(function(){ sincUnids(); atualizarVgsUni(); }, 600);
     }
   }, 500);
 
