@@ -196,6 +196,41 @@ app.get('/api/me', function(req, res) {
   res.json({ ok: true, email: u.email, nome: u.nome, papel: u.papel });
 });
 
+// ═══ ROTA /api/verificar-senha — usada pelo modal de exclusão de projeto ═══
+// Reaproveita verificarBloqueio/registrarFalha/limparTentativas para proteção anti-bruteforce
+app.post('/api/verificar-senha', async function(req, res) {
+  var s = lerSessao(req);
+  if (!s || !s.email) return res.status(401).json({ ok: false, erro: 'Sessao expirada.' });
+  var u = buscarUsuario(s.email);
+  if (!u || !u.ativo) return res.status(401).json({ ok: false, erro: 'Conta inativa.' });
+
+  // Verifica se o usuario ja esta bloqueado
+  var bloq = verificarBloqueio(u.email);
+  if (bloq) return res.status(429).json({ ok: false, bloqueado: true, minutos: bloq, erro: 'Bloqueado por seguranca. Aguarde ' + bloq + ' min.' });
+
+  var senha = (req.body && req.body.senha) ? String(req.body.senha) : '';
+  if (!senha) return res.status(400).json({ ok: false, erro: 'Senha obrigatoria.' });
+  if (!u.senhaHash) return res.status(400).json({ ok: false, erro: 'Usuario sem senha cadastrada.' });
+
+  try {
+    var ok = await bcrypt.compare(senha, u.senhaHash);
+    if (!ok) {
+      registrarFalha(u.email);
+      var rr = tentativasLogin[u.email.toLowerCase()];
+      var rest = MAX_TENTATIVAS - (rr ? rr.tentativas : 0);
+      if (rest <= 0) {
+        return res.status(429).json({ ok: false, bloqueado: true, minutos: Math.ceil(TEMPO_BLOQUEIO / 60000), erro: 'Bloqueado por seguranca. Aguarde ' + Math.ceil(TEMPO_BLOQUEIO / 60000) + ' min.' });
+      }
+      return res.status(401).json({ ok: false, restantes: rest, erro: 'Senha incorreta. Restam ' + rest + ' tentativas.' });
+    }
+    limparTentativas(u.email);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Erro ao verificar senha:', e.message);
+    res.status(500).json({ ok: false, erro: 'Erro interno.' });
+  }
+});
+
 // ═══ ROTAS DE PROJETOS (Supabase) ═══
 function exigirLogin(req, res, next) {
   var s = lerSessao(req);
@@ -354,6 +389,6 @@ app.post('/api/nbr-resultado', async function(req, res) {
 
 app.listen(PORT, '0.0.0.0', function() {
   console.log('');
-  console.log('  PAAC v5.1 rodando na porta ' + PORT);
+  console.log('  PAAC v5.2 rodando na porta ' + PORT);
   console.log('');
 });
